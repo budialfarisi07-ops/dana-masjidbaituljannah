@@ -273,8 +273,8 @@
     </div>
 
     <script>
-        // MASUKKAN URL APPS SCRIPT ANDA DI SINI
-        const API_URL = "https://script.google.com/macros/s/AKfycbwVTScBrFIxox5bxToHfE1fPkZ8yBhcwYi-s9mhrmaJ8Csd5eLrD2ojYmn_73oarVegdg/exec";
+        // ISI DENGAN URL WEB APP HASIL NEW DEPLOYMENT ANDA
+        const API_URL = "https://script.google.com/macros/s/AKfycbzsVGc-mNH_YUuYiW-AKRj7M8pa9rCZkhmLEzzbTEd-A8ymRAs6vzfzvAbRNXr7fTGm5A/exec";
 
         let masterDatabase = {};
 
@@ -294,7 +294,6 @@
                 renderCurrentPeriod();
             } catch (e) {
                 console.error("Gagal sinkron Cloud:", e);
-                // Fallback ke LocalStorage jika offline
                 masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
                 renderCurrentPeriod();
             }
@@ -311,7 +310,7 @@
                     body: JSON.stringify(updatedDb)
                 });
                 localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
-                document.getElementById('uploadStatus').innerText = "Tersimpan di Cloud";
+                document.getElementById('uploadStatus').innerText = "Tersimpan di Cloud Google Sheets";
             } catch (e) {
                 console.error("Gagal kirim ke Cloud:", e);
                 localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
@@ -410,7 +409,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER PRESISI MURNI MEMBACA EXCEL ---
+        // --- PARSER PRESISI EXCEL ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -545,7 +544,7 @@
 
             syncToCloud(masterDatabase);
             renderCurrentPeriod();
-            alert(`Laporan Periode ${mo} ${yr} Berhasil Di-upload ke Cloud!`);
+            alert(`Laporan Periode ${mo} ${yr} Berhasil Di-upload ke Google Sheets!`);
         }
 
         // --- RENDER PERIOD DATA ---
@@ -573,7 +572,7 @@
                 return;
             }
 
-            statusEl.innerText = "Tersedia";
+            statusEl.innerText = "Tersedia (Cloud)";
             statusEl.className = "font-semibold text-emerald-600";
 
             let sisaUmum = Number(data.infakUmumSisa) || 0;
@@ -612,7 +611,7 @@
                     <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${i.akad}</span></td>
                     <td class="py-2.5 text-right font-semibold text-rose-600">${formatRp(i.nominal)}</td>
                     <td class="py-2.5 text-center col-action ${isAdmin ? '' : 'hidden'}">
-                        <button onclick="openEditModal('pemasukan', ${idx})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-1.5"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="openEditModal('pengeluaran', ${idx})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-1.5"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="deleteTransaction('pengeluaran', ${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
