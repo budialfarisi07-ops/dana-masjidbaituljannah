@@ -23,10 +23,10 @@
                 <h1 class="text-lg sm:text-2xl font-bold flex items-center gap-2">
                     <i class="fa-solid fa-mosque"></i> Masjid Baitul Jannah
                 </h1>
-                <p class="text-emerald-100 text-xs sm:text-sm mt-0.5">Transparansi Kas & Laporan Keuangan</p>
+                <p class="text-emerald-100 text-xs sm:text-sm mt-0.5">Transparansi Kas & Laporan Keuangan Jam'iyyah</p>
             </div>
             
-            <!-- Tombol Navigasi Admin / Status Login -->
+            <!-- Status Login Admin / Tombol Navigasi -->
             <div>
                 <button id="btnLogin" onclick="openLoginModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition border border-white/20">
                     <i class="fa-solid fa-lock"></i> Login Admin
@@ -45,28 +45,59 @@
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
 
-        <!-- PANEL ADMIN KHUSUS (MANGKAT / MUNCUL HANYA SETELAH LOGIN) -->
+        <!-- PANEL OPERASIONAL ADMIN (MUNCUL HANYA SETELAH LOGIN ADMIN) -->
         <div id="adminPanel" class="hidden bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 mb-6 shadow-sm">
             <div class="flex items-center justify-between mb-3 pb-2 border-b border-emerald-200">
                 <h3 class="font-bold text-emerald-900 text-sm flex items-center gap-2">
                     <i class="fa-solid fa-sliders text-emerald-700"></i> Panel Pengaturan & Upload Admin
                 </h3>
-                <span class="text-[11px] text-emerald-700 font-medium">Sistem Upload Aktif</span>
+                <button onclick="openSettingsModal()" class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-gear"></i> Ganti PIN Admin
+                </button>
             </div>
 
             <!-- Drag & Drop Zone -->
             <div id="dropZone" class="border-2 border-dashed border-emerald-400 bg-white rounded-xl p-6 text-center cursor-pointer hover:border-emerald-600 transition shadow-inner">
                 <i class="fa-solid fa-file-excel text-3xl text-emerald-600 mb-2"></i>
                 <p class="text-xs sm:text-sm font-bold text-slate-700">Tarik & Lepas File Laporan Excel (.xlsx) Ke Sini</p>
-                <p class="text-[11px] text-slate-400 mt-1">atau klik di sini untuk memilih file dari komputer/HP</p>
+                <p class="text-[11px] text-slate-400 mt-1">Sistem otomatis mengenali periode bulan & tahun dari file</p>
                 <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
             </div>
 
             <div class="mt-3 flex justify-between items-center text-xs">
-                <button onclick="resetData()" class="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-trash-can"></i> Hapus & Reset Data Kas
+                <button onclick="resetCurrentPeriodData()" class="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> Hapus Data Periode Ini
                 </button>
-                <span id="uploadStatus" class="text-slate-500 italic">Belum ada file di-upload</span>
+                <span id="uploadStatus" class="text-slate-500 italic">Upload file Excel untuk memperbarui periode terpilih</span>
+            </div>
+        </div>
+
+        <!-- DROPDOWN PILIHAN TAHUN & BULAN -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <label class="text-xs sm:text-sm font-semibold text-slate-600">Pilih Periode Laporan:</label>
+                <select id="selectYear" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg p-2 font-medium focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="2026" selected>2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                </select>
+                <select id="selectMonth" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg p-2 font-medium focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="Januari" selected>Januari</option>
+                    <option value="Februari">Februari</option>
+                    <option value="Maret">Maret</option>
+                    <option value="April">April</option>
+                    <option value="Mei">Mei</option>
+                    <option value="Juni">Juni</option>
+                    <option value="Juli">Juli</option>
+                    <option value="Agustus">Agustus</option>
+                    <option value="September">September</option>
+                    <option value="Oktober">Oktober</option>
+                    <option value="November">November</option>
+                    <option value="Desember">Desember</option>
+                </select>
+            </div>
+            <div class="text-xs text-slate-500">
+                Status: <span id="dataStatus" class="font-semibold text-emerald-600">Memuat...</span>
             </div>
         </div>
 
@@ -122,7 +153,7 @@
                         </tr>
                     </thead>
                     <tbody id="tblPemasukan" class="divide-y divide-slate-100">
-                        <tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Belum ada data laporan</td></tr>
+                        <tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk periode ini</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -137,13 +168,14 @@
                 <table class="w-full text-left text-xs sm:text-sm">
                     <thead>
                         <tr class="text-slate-400 border-b border-slate-200">
+                            <th class="pb-2 w-16">Tgl</th>
                             <th class="pb-2">Keterangan</th>
                             <th class="pb-2 w-28">Dana/Akad</th>
                             <th class="pb-2 text-right">Nominal</th>
                         </tr>
                     </thead>
                     <tbody id="tblPengeluaran" class="divide-y divide-slate-100">
-                        <tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Belum ada data laporan</td></tr>
+                        <tr><td colspan="4" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk periode ini</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -160,11 +192,8 @@
                 </h3>
                 <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
             <p class="text-xs text-slate-500 mb-3">Masukkan PIN Admin untuk mengunggah file laporan kas.</p>
-            
-            <input type="password" id="inputPin" placeholder="Masukkan PIN (Default: 1234)" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            
+            <input type="password" id="inputPin" placeholder="Masukkan PIN" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             <div class="flex gap-2">
                 <button onclick="closeLoginModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">Batal</button>
                 <button onclick="submitLogin()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Masuk</button>
@@ -172,11 +201,40 @@
         </div>
     </div>
 
+    <!-- Modal Pop-up Pengaturan Ganti PIN -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-key text-emerald-600"></i> Ganti PIN Admin
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-600">PIN Lama:</label>
+                    <input type="password" id="pinLama" class="w-full border p-2 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-600">PIN Baru:</label>
+                    <input type="password" id="pinBaru" class="w-full border p-2 rounded-lg text-sm">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeSettingsModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Batal</button>
+                <button onclick="saveNewPin()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg shadow">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const PIN_ADMIN_RAHASIA = "1234"; // Ganti PIN Admin Anda di sini
         const formatRp = (num) => "Rp " + (Number(num) || 0).toLocaleString("id-ID");
 
-        // --- MANAJEMEN STATUS LOGIN ADMIN ---
+        function getAdminPin() {
+            return localStorage.getItem('masjid_admin_pin') || "1234";
+        }
+
+        // --- MANAGEMENT LOGIN & SESSION ADMIN ---
         function checkAdminSession() {
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
             if (isAdmin) {
@@ -202,7 +260,7 @@
 
         function submitLogin() {
             const pin = document.getElementById('inputPin').value;
-            if (pin === PIN_ADMIN_RAHASIA) {
+            if (pin === getAdminPin()) {
                 localStorage.setItem('is_admin_logged_in', 'true');
                 closeLoginModal();
                 checkAdminSession();
@@ -215,6 +273,34 @@
         function logoutAdmin() {
             localStorage.removeItem('is_admin_logged_in');
             checkAdminSession();
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+            document.getElementById('pinLama').value = '';
+            document.getElementById('pinBaru').value = '';
+        }
+
+        function saveNewPin() {
+            const pLama = document.getElementById('pinLama').value;
+            const pBaru = document.getElementById('pinBaru').value;
+
+            if (pLama !== getAdminPin()) {
+                alert("PIN Lama tidak sesuai!");
+                return;
+            }
+            if (!pBaru || pBaru.length < 4) {
+                alert("PIN Baru minimal 4 karakter!");
+                return;
+            }
+
+            localStorage.setItem('masjid_admin_pin', pBaru);
+            alert("PIN Admin Berhasil Diperbarui!");
+            closeSettingsModal();
         }
 
         // --- DRAG & DROP FILE HANDLER ---
@@ -261,47 +347,81 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- SMART PARSER EXCEL (UNTUK MODEL JANUARI DAN AGUSTUS) ---
+        // --- AKURAT & PRESISI PARSER EXCEL ---
         function parseAndSaveExcel(rows, fileName) {
+            let year = document.getElementById('selectYear').value;
+            let month = document.getElementById('selectMonth').value;
+
+            // Cek Bulan dari Teks Header Excel (jika ada)
+            const monthsList = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+            rows.forEach(r => {
+                if (!r) return;
+                const rStr = r.join(" ");
+                monthsList.forEach(m => {
+                    if (rStr.toUpperCase().includes(m.toUpperCase())) month = m;
+                });
+                if (rStr.includes("2024")) year = "2024";
+                if (rStr.includes("2025")) year = "2025";
+                if (rStr.includes("2026")) year = "2026";
+            });
+
             let saldoAwal = 0;
+            let saldoAkhirExcel = null;
             let listPemasukan = [];
             let listPengeluaran = [];
             let posKas = { "Infak Umum": 0, "Infak Yatim": 0 };
-            let isPengeluaran = false;
+            let isPengeluaranSection = false;
 
-            rows.forEach(row => {
-                if (!row || !row.length) return;
-                const rowStr = row.join(" ").toLowerCase();
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || !row.length) continue;
+                const rowStr = row.join(" ").trim();
+                const rowLower = rowStr.toLowerCase();
 
-                // Deteksi Saldo Awal
-                if (rowStr.includes("saldo awal")) {
+                // Ambil Saldo Awal
+                if (rowLower.includes("saldo awal") && !rowLower.includes("rincian")) {
                     row.forEach(cell => {
                         if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
                     });
                 }
 
-                // Cek Perubahan Section Pengeluaran
-                if (rowStr.includes("pengeluaran") && !rowStr.includes("kategori")) {
-                    isPengeluaran = true;
+                // Ambil Saldo Akhir Resmi jika tertulis di Excel
+                if (rowLower.includes("saldo akhir") && !rowLower.includes("rincian")) {
+                    row.forEach(cell => {
+                        if (typeof cell === 'number' && cell > 1000) saldoAkhirExcel = cell;
+                    });
                 }
 
-                // Ambil Data Baris
-                let ket = "", akad = "", nominal = 0;
-                row.forEach(cell => {
-                    if (typeof cell === 'string') {
-                        let cLower = cell.toLowerCase();
-                        if (cLower.includes("infak") && cell.length < 30) {
-                            akad = cell;
-                        } else if (cell.length > 3 && !ket && !cLower.includes("pemasukan") && !cLower.includes("pengeluaran") && !cLower.includes("laporan")) {
-                            ket = cell;
+                // BERHENTI Parsing jika memasuki area "Total Pengeluaran", "Saldo Akhir", atau "Rincian Saldo"
+                if (rowLower.includes("total pengeluaran") || rowLower.includes("rincian saldo akhir")) {
+                    break;
+                }
+
+                // Deteksi Perubahan ke Pengeluaran
+                if (rowLower.includes("pengeluaran :") || rowLower.includes("pengeluaran")) {
+                    isPengeluaranSection = true;
+                    continue;
+                }
+
+                // Parsing Item Transaksi
+                let tgl = "", ket = "", akad = "", nominal = 0;
+
+                row.forEach((cell, idx) => {
+                    if (typeof cell === 'number') {
+                        if (cell >= 1 && cell <= 31 && idx <= 2) tgl = cell;
+                        else if (cell > 500) nominal = cell;
+                    } else if (typeof cell === 'string') {
+                        let cLower = cell.toLowerCase().trim();
+                        if (cLower.includes("infak") && cell.length < 25) {
+                            akad = cell.trim();
+                        } else if (cell.length > 2 && !ket && !cLower.includes("pemasukan") && !cLower.includes("pengeluaran") && !cLower.includes("laporan") && !cLower.includes("tanggal")) {
+                            ket = cell.trim();
                         }
-                    } else if (typeof cell === 'number' && cell > 500) {
-                        nominal = cell;
                     }
                 });
 
-                // Penentuan Akad Otomatis (Autodetect)
-                if (!akad) {
+                // Auto-Detect Akad jika tidak tersedia di kolom khusus
+                if (!akad && ket) {
                     if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
                         akad = "Infak Yatim";
                     } else {
@@ -309,49 +429,79 @@
                     }
                 }
 
-                if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal")) {
-                    if (!isPengeluaran) {
+                if (ket && nominal > 0 && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal")) {
+                    if (!isPengeluaranSection) {
                         listPemasukan.push({ ket, akad, nominal });
                         if (akad.toLowerCase().includes("yatim")) posKas["Infak Yatim"] += nominal;
                         else posKas["Infak Umum"] += nominal;
                     } else {
-                        listPengeluaran.push({ ket, akad, nominal });
+                        listPengeluaran.push({ tgl: tgl ? `${tgl} ${month.substring(0,3)}` : '-', ket, akad, nominal });
                         if (akad.toLowerCase().includes("yatim")) posKas["Infak Yatim"] -= nominal;
                         else posKas["Infak Umum"] -= nominal;
                     }
                 }
-            });
+            }
 
-            let totalMasuk = listPemasukan.reduce((sum, i) => sum + i.nominal, 0);
-            let totalKeluar = listPengeluaran.reduce((sum, i) => sum + i.nominal, 0);
-            let saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
+            let totalMasuk = listPemasukan.reduce((s, i) => s + i.nominal, 0);
+            let totalKeluar = listPengeluaran.reduce((s, i) => s + i.nominal, 0);
+            let saldoAkhirCalculated = saldoAwal + totalMasuk - totalKeluar;
+            
+            // Gunakan Saldo Akhir dari Excel jika ada, atau hitungan matematika
+            let finalSaldoAkhir = (saldoAkhirExcel !== null) ? saldoAkhirExcel : saldoAkhirCalculated;
 
-            // Paketkan Data
-            const parsedData = {
+            // Simpan Berdasarkan Struktur Tahun > Bulan di LocalStorage
+            let allData = JSON.parse(localStorage.getItem('masjid_db_data')) || {};
+            if (!allData[year]) allData[year] = {};
+
+            allData[year][month] = {
                 fileName,
                 saldoAwal,
                 totalMasuk,
                 totalKeluar,
-                saldoAkhir,
+                saldoAkhir: finalSaldoAkhir,
                 posKas,
                 listPemasukan,
                 listPengeluaran
             };
 
-            // SIMPAN PERMANEN KE LOCALSTORAGE BROWSER
-            localStorage.setItem('masjid_saved_data', JSON.stringify(parsedData));
-            
-            document.getElementById('uploadStatus').innerText = `File "${fileName}" Berhasil Di-upload!`;
-            renderDataFromStorage();
-            alert(`Laporan "${fileName}" Berhasil Di-upload dan Disimpan!`);
+            localStorage.setItem('masjid_db_data', JSON.stringify(allData));
+
+            // Sync Dropdown UI dengan Periode File yang Baru Di-upload
+            document.getElementById('selectYear').value = year;
+            document.getElementById('selectMonth').value = month;
+
+            renderCurrentPeriod();
+            alert(`Laporan ${month} ${year} Berhasil Di-upload dan Tersimpan!`);
         }
 
-        // --- RENDER DATA DARI STORAGE (DAPAT DILIHAT PUBLIK & ADMIN) ---
-        function renderDataFromStorage() {
-            const saved = localStorage.getItem('masjid_saved_data');
-            if (!saved) return;
+        // --- RENDER PERIOD DATA ---
+        function renderCurrentPeriod() {
+            const yr = document.getElementById('selectYear').value;
+            const mo = document.getElementById('selectMonth').value;
 
-            const data = JSON.parse(saved);
+            const allData = JSON.parse(localStorage.getItem('masjid_db_data')) || {};
+            const data = (allData[yr] && allData[yr][mo]) ? allData[yr][mo] : null;
+
+            const statusEl = document.getElementById('dataStatus');
+
+            if (!data) {
+                statusEl.innerText = "Belum Ada Data";
+                statusEl.className = "font-semibold text-rose-500";
+                
+                document.getElementById('txtSaldoAwal').innerText = "Rp 0";
+                document.getElementById('txtPemasukan').innerText = "Rp 0";
+                document.getElementById('txtPengeluaran').innerText = "Rp 0";
+                document.getElementById('txtSaldoAkhir').innerText = "Rp 0";
+                document.getElementById('txtInfakUmum').innerText = "Rp 0";
+                document.getElementById('txtInfakYatim').innerText = "Rp 0";
+
+                document.getElementById('tblPemasukan').innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk ${mo} ${yr}</td></tr>`;
+                document.getElementById('tblPengeluaran').innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk ${mo} ${yr}</td></tr>`;
+                return;
+            }
+
+            statusEl.innerText = "Data Tersedia";
+            statusEl.className = "font-semibold text-emerald-600";
 
             document.getElementById('txtSaldoAwal').innerText = formatRp(data.saldoAwal);
             document.getElementById('txtPemasukan').innerText = formatRp(data.totalMasuk);
@@ -360,10 +510,6 @@
 
             document.getElementById('txtInfakUmum').innerText = formatRp(data.posKas["Infak Umum"]);
             document.getElementById('txtInfakYatim').innerText = formatRp(data.posKas["Infak Yatim"]);
-
-            if (data.fileName) {
-                document.getElementById('uploadStatus').innerText = `File Aktif: ${data.fileName}`;
-            }
 
             // Render Tabel Pemasukan
             document.getElementById('tblPemasukan').innerHTML = data.listPemasukan.length ? data.listPemasukan.map(i => `
@@ -377,24 +523,32 @@
             // Render Tabel Pengeluaran
             document.getElementById('tblPengeluaran').innerHTML = data.listPengeluaran.length ? data.listPengeluaran.map(i => `
                 <tr>
+                    <td class="py-2.5 text-slate-400 font-mono text-xs">${i.tgl}</td>
                     <td class="py-2.5 text-slate-700">${i.ket}</td>
                     <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${i.akad}</span></td>
                     <td class="py-2.5 text-right font-semibold text-rose-600">${formatRp(i.nominal)}</td>
                 </tr>
-            `).join('') : `<tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Tidak ada transaksi pengeluaran</td></tr>`;
+            `).join('') : `<tr><td colspan="4" class="py-4 text-center text-slate-400 italic">Tidak ada transaksi pengeluaran</td></tr>`;
         }
 
-        function resetData() {
-            if (confirm("Apakah Anda yakin ingin menghapus data laporan kas?")) {
-                localStorage.removeItem('masjid_saved_data');
-                location.reload();
+        function resetCurrentPeriodData() {
+            const yr = document.getElementById('selectYear').value;
+            const mo = document.getElementById('selectMonth').value;
+
+            if (confirm(`Apakah Anda yakin ingin menghapus data periode ${mo} ${yr}?`)) {
+                let allData = JSON.parse(localStorage.getItem('masjid_db_data')) || {};
+                if (allData[yr] && allData[yr][mo]) {
+                    delete allData[yr][mo];
+                    localStorage.setItem('masjid_db_data', JSON.stringify(allData));
+                    renderCurrentPeriod();
+                    alert(`Data ${mo} ${yr} telah dihapus.`);
+                }
             }
         }
 
-        // Inisialisasi Tampilan saat Web Dibuka
         document.addEventListener("DOMContentLoaded", () => {
             checkAdminSession();
-            renderDataFromStorage();
+            renderCurrentPeriod();
         });
     </script>
 </body>
