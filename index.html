@@ -371,7 +371,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- SMART PARSER EXCEL PERIODE TERISOLASI MURNI ---
+        // --- PARSER PRESISI MURNI MEMBACA TEKS "TOTAL PENGELUARAN" DARI EXCEL ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -382,25 +382,42 @@
             });
 
             let saldoAwal = 0;
-            let listPemasukan = [];
-            let listPengeluaran = [];
+            let totalPemasukanExcel = 0;
+            let totalPengeluaranExcel = 0;
             let infakUmumSisa = 0;
             let infakYatimSisa = 0;
-            let isPengeluaran = false;
+
+            let listPemasukan = [];
+            let listPengeluaran = [];
+            let isPengeluaranSection = false;
 
             rows.forEach(row => {
                 if (!row || !row.length) return;
 
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                // 1. Deteksi Saldo Awal Murni File Excel Ini
+                // 1. Membaca Saldo Awal Riil
                 if (rowStr.includes("saldo awal")) {
                     row.forEach(cell => {
                         if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
                     });
                 }
 
-                // 2. Deteksi Rincian Kas yang Tertera di File
+                // 2. Membaca "TOTAL PEMASUKAN" Langsung dari Teks Excel
+                if (rowStr.includes("total pemasukan")) {
+                    row.forEach(cell => {
+                        if (typeof cell === 'number' && cell > 1000) totalPemasukanExcel = cell;
+                    });
+                }
+
+                // 3. Membaca "TOTAL PENGELUARAN" Langsung dari Teks Excel
+                if (rowStr.includes("total pengeluaran")) {
+                    row.forEach(cell => {
+                        if (typeof cell === 'number' && cell > 1000) totalPengeluaranExcel = cell;
+                    });
+                }
+
+                // 4. Membaca Rincian Infak Sisa Jika Ada
                 if (rowStr.includes("infaq umum") || rowStr.includes("infak umum")) {
                     row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakUmumSisa = cell; });
                 }
@@ -410,10 +427,11 @@
 
                 // Switch section pengeluaran
                 if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
-                    isPengeluaran = true;
+                    isPengeluaranSection = true;
                     return;
                 }
 
+                // Mengambil Item Transaksi
                 let tgl = "", ket = "", akad = "", nominal = 0;
 
                 row.forEach((cell) => {
@@ -456,7 +474,7 @@
                 }
 
                 if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal") && !ket.toLowerCase().includes("rincian")) {
-                    if (!isPengeluaran) {
+                    if (!isPengeluaranSection) {
                         listPemasukan.push({ tgl: tgl || "-", ket, akad, nominal });
                     } else {
                         listPengeluaran.push({ tgl: tgl || "-", ket, akad, nominal });
@@ -464,43 +482,43 @@
                 }
             });
 
-            savePeriodData(year, month, fileName, saldoAwal, infakUmumSisa, infakYatimSisa, listPemasukan, listPengeluaran);
+            savePeriodData(year, month, fileName, saldoAwal, totalPemasukanExcel, totalPengeluaranExcel, infakUmumSisa, infakYatimSisa, listPemasukan, listPengeluaran);
             document.getElementById('selectYear').value = year;
             document.getElementById('selectMonth').value = month;
             renderCurrentPeriod();
             alert(`Laporan Periode ${month} ${year} Berhasil Di-upload!`);
         }
 
-        function savePeriodData(yr, mo, fileName, saldoAwal, infakUmumSisa, infakYatimSisa, listPemasukan, listPengeluaran) {
-            let totalMasuk = listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
-            let totalKeluar = listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
+        function savePeriodData(yr, mo, fileName, saldoAwal, totalPemasukanExcel, totalPengeluaranExcel, infakUmumSisa, infakYatimSisa, listPemasukan, listPengeluaran) {
+            // Gunakan Total Pemasukan dari teks Excel; jika 0 gunakan hasil penjumlahan item
+            let totalMasuk = totalPemasukanExcel || listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
             
-            // LOGIKA PEMISAHAN KAS BERDIRI SENDIRI MURNI DARI DATA EXCEL
+            // GUNAKAN TOTAL PENGELUARAN MURNI DARI TEKS EXCEL; jika 0 gunakan hasil penjumlahan item
+            let totalKeluar = totalPengeluaranExcel || listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
+
             let sisaUmum = infakUmumSisa;
             let sisaYatim = infakYatimSisa;
 
-            // Jika rincian di bawah Excel tidak tertulis, hitung rasio murni transaksi bulan ini + saldo awal
             if(!sisaUmum && !sisaYatim) {
                 let hitungSisa = Number(saldoAwal) + totalMasuk - totalKeluar;
                 sisaUmum = Math.round(hitungSisa * 0.8);
                 sisaYatim = hitungSisa - sisaUmum;
             }
             
-            // KUNCI: SALDO AKHIR ADALAH HASIL PENJUMLAHAN LANGSUNG (INFAK UMUM + INFAK YATIM)
+            // Total Saldo Akhir adalah hasil penjumlahan Rincian Akad (Sisa Umum + Sisa Yatim)
             let saldoAkhir = Number(sisaUmum) + Number(sisaYatim);
 
             let allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
             if(!allDatabase[yr]) allDatabase[yr] = {};
 
-            // SIMPAN HANYA UNTUK BULAN/TAHUN SPESIFIK TANPA MENGGANGGU BULAN LAIN
             allDatabase[yr][mo] = {
                 fileName: fileName || "Data Disimpan Admin",
                 saldoAwal: Number(saldoAwal),
-                totalMasuk,
-                totalKeluar,
-                saldoAkhir,
-                infakUmumSisa: sisaUmum,
-                infakYatimSisa: sisaYatim,
+                totalMasuk: Number(totalMasuk),
+                totalKeluar: Number(totalKeluar),
+                saldoAkhir: Number(saldoAkhir),
+                infakUmumSisa: Number(sisaUmum),
+                infakYatimSisa: Number(sisaYatim),
                 listPemasukan,
                 listPengeluaran
             };
@@ -508,7 +526,7 @@
             localStorage.setItem('masjid_db_master', JSON.stringify(allDatabase));
         }
 
-        // --- RENDER DATA TERISOLASI MURNI PER BULAN ---
+        // --- RENDER PERIOD DATA ---
         function renderCurrentPeriod() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -540,8 +558,6 @@
 
             let sisaUmum = Number(data.infakUmumSisa) || 0;
             let sisaYatim = Number(data.infakYatimSisa) || 0;
-            
-            // KUNCI PENAMPILAN: Saldo Akhir Stiker Dashboard = Infak Umum + Infak Yatim Murni
             let totalSaldoAkhirPas = sisaUmum + sisaYatim;
 
             document.getElementById('txtSaldoAwal').innerText = formatRp(data.saldoAwal);
@@ -630,7 +646,7 @@
                 data.listPengeluaran[index] = updatedItem;
             }
 
-            savePeriodData(yr, mo, data.fileName, data.saldoAwal, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
+            savePeriodData(yr, mo, data.fileName, data.saldoAwal, data.totalMasuk, data.totalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
             closeEditModal();
             renderCurrentPeriod();
             alert("Data Transaksi Berhasil Diperbarui!");
@@ -649,7 +665,7 @@
                     data.listPengeluaran.splice(index, 1);
                 }
 
-                savePeriodData(yr, mo, data.fileName, data.saldoAwal, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
+                savePeriodData(yr, mo, data.fileName, data.saldoAwal, data.totalMasuk, data.totalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
                 renderCurrentPeriod();
             }
         }
