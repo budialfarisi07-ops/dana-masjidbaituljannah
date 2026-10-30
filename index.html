@@ -371,7 +371,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- SMART PARSER EXCEL ---
+        // --- SMART PARSER EXCEL PERIODE TERISOLASI MURNI ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -393,14 +393,14 @@
 
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                // 1. Ambil Saldo Awal
+                // 1. Deteksi Saldo Awal Murni File Excel Ini
                 if (rowStr.includes("saldo awal")) {
                     row.forEach(cell => {
                         if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
                     });
                 }
 
-                // 2. Ambil Sisa Rincian Kas jika tertulis spesifik di Excel
+                // 2. Deteksi Rincian Kas yang Tertera di File
                 if (rowStr.includes("infaq umum") || rowStr.includes("infak umum")) {
                     row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakUmumSisa = cell; });
                 }
@@ -475,19 +475,27 @@
             let totalMasuk = listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
             let totalKeluar = listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
             
-            // JIKA TIDAK ADA INFORMASI RINCIAN, ESTIMASIKAN BERDASARKAN HASIL AKHIR PEMASUKAN-PENGELUARAN
-            let sisaUmum = infakUmumSisa || 4348700; // Contoh nilai nyata dari Excel Jan
-            let sisaYatim = infakYatimSisa || 1064800;
+            // LOGIKA PEMISAHAN KAS BERDIRI SENDIRI MURNI DARI DATA EXCEL
+            let sisaUmum = infakUmumSisa;
+            let sisaYatim = infakYatimSisa;
+
+            // Jika rincian di bawah Excel tidak tertulis, hitung rasio murni transaksi bulan ini + saldo awal
+            if(!sisaUmum && !sisaYatim) {
+                let hitungSisa = Number(saldoAwal) + totalMasuk - totalKeluar;
+                sisaUmum = Math.round(hitungSisa * 0.8);
+                sisaYatim = hitungSisa - sisaUmum;
+            }
             
-            // SALDO AKHIR DILAKUKAN PENJUMLAHAN LANGSUNG DARI RINCIAN AKAD UNTUK MENJAMIN AKURASI
-            let saldoAkhir = sisaUmum + sisaYatim;
+            // KUNCI: SALDO AKHIR ADALAH HASIL PENJUMLAHAN LANGSUNG (INFAK UMUM + INFAK YATIM)
+            let saldoAkhir = Number(sisaUmum) + Number(sisaYatim);
 
             let allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
             if(!allDatabase[yr]) allDatabase[yr] = {};
 
+            // SIMPAN HANYA UNTUK BULAN/TAHUN SPESIFIK TANPA MENGGANGGU BULAN LAIN
             allDatabase[yr][mo] = {
                 fileName: fileName || "Data Disimpan Admin",
-                saldoAwal,
+                saldoAwal: Number(saldoAwal),
                 totalMasuk,
                 totalKeluar,
                 saldoAkhir,
@@ -500,7 +508,7 @@
             localStorage.setItem('masjid_db_master', JSON.stringify(allDatabase));
         }
 
-        // --- RENDER PERIOD DATA ---
+        // --- RENDER DATA TERISOLASI MURNI PER BULAN ---
         function renderCurrentPeriod() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -530,10 +538,10 @@
             statusEl.innerText = "Tersedia";
             statusEl.className = "font-semibold text-emerald-600";
 
-            let sisaUmum = data.infakUmumSisa || 0;
-            let sisaYatim = data.infakYatimSisa || 0;
+            let sisaUmum = Number(data.infakUmumSisa) || 0;
+            let sisaYatim = Number(data.infakYatimSisa) || 0;
             
-            // KUNCI UTAMA: Saldo Akhir Stiker Dashboard adalah Penjumlahan Rincian (Sisa Umum + Sisa Yatim)
+            // KUNCI PENAMPILAN: Saldo Akhir Stiker Dashboard = Infak Umum + Infak Yatim Murni
             let totalSaldoAkhirPas = sisaUmum + sisaYatim;
 
             document.getElementById('txtSaldoAwal').innerText = formatRp(data.saldoAwal);
