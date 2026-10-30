@@ -89,7 +89,7 @@
                     <option value="Mei">Mei</option>
                     <option value="Juni">Juni</option>
                     <option value="Juli">Juli</option>
-                    <option value="Agustus" selected>Agustus</option>
+                    <option value="Agustus">Agustus</option>
                     <option value="September">September</option>
                     <option value="Oktober">Oktober</option>
                     <option value="November">November</option>
@@ -371,7 +371,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- SMART PARSER EXCEL DETEKSI AKURAT ---
+        // --- SMART PARSER EXCEL DETEKSI PRESISI ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -390,16 +390,18 @@
 
             rows.forEach(row => {
                 if (!row || !row.length) return;
-                const rowStr = row.join(" ").toLowerCase();
 
-                // 1. Dapatkan Saldo Awal (Presisi)
+                // Cek teks dalam satu baris
+                let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
+
+                // 1. Ambil Saldo Awal (Cari angka di baris yang ada kata "saldo awal")
                 if (rowStr.includes("saldo awal")) {
                     row.forEach(cell => {
                         if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
                     });
                 }
 
-                // 2. Dapatkan Sisa Rincian Kas jika ada di bawah
+                // 2. Ambil Sisa Kas Rincian Jika Ada di Bawah
                 if (rowStr.includes("infaq umum") || rowStr.includes("infak umum")) {
                     row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakUmumSisa = cell; });
                 }
@@ -407,31 +409,51 @@
                     row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakYatimSisa = cell; });
                 }
 
-                // Switch status pengeluaran
+                // Deteksi pergantian section Pemasukan -> Pengeluaran
                 if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
                     isPengeluaran = true;
+                    return;
                 }
 
-                // Ekstraksi Tgl, Ket, Akad & Nominal
+                // Ekstraksi Khusus Transaksi
                 let tgl = "", ket = "", akad = "", nominal = 0;
 
                 row.forEach((cell, idx) => {
+                    if (cell === null || cell === undefined) return;
+
+                    // Jika cell berupa angka
                     if (typeof cell === 'number') {
                         if (cell >= 1 && cell <= 31 && !tgl) {
                             tgl = `${cell} ${month.substring(0,3)}`;
                         } else if (cell > 500) {
                             nominal = cell;
                         }
-                    } else if (typeof cell === 'string') {
-                        let cLower = cell.toLowerCase();
-                        if (cLower.includes("infak") && cell.length < 30) {
-                            akad = cell;
-                        } else if (cell.length > 2 && !ket && !cLower.includes("pemasukan") && !cLower.includes("pengeluaran") && !cLower.includes("laporan") && !cLower.includes("tanggal")) {
-                            ket = cell;
+                    } 
+                    // Jika cell berupa teks
+                    else if (typeof cell === 'string') {
+                        let cTrim = cell.trim();
+                        let cLower = cTrim.toLowerCase();
+
+                        // Cek jika teks berisi nama akad
+                        if (cLower.includes("infak") && cTrim.length < 30) {
+                            akad = cTrim;
+                        } 
+                        // Abaikan teks nama bulan saja ("Januari", "Agustus") atau kata kunci header
+                        else if (
+                            cTrim.length > 2 && 
+                            !ket && 
+                            !monthsList.some(m => m.toLowerCase() === cLower) &&
+                            !cLower.includes("pemasukan") && 
+                            !cLower.includes("pengeluaran") && 
+                            !cLower.includes("laporan") && 
+                            !cLower.includes("tanggal")
+                        ) {
+                            ket = cTrim;
                         }
                     }
                 });
 
+                // Penentuan Akad Otomatis
                 if (!akad) {
                     if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
                         akad = "Infak Yatim";
@@ -440,6 +462,7 @@
                     }
                 }
 
+                // Masukkan hanya jika ada keterangan & nominal valid (bukan baris total/saldo)
                 if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal") && !ket.toLowerCase().includes("rincian")) {
                     if (!isPengeluaran) {
                         listPemasukan.push({ tgl: tgl || "-", ket, akad, nominal });
@@ -514,7 +537,7 @@
             document.getElementById('txtPengeluaran').innerText = formatRp(data.totalKeluar);
             document.getElementById('txtSaldoAkhir').innerText = formatRp(data.saldoAkhir);
 
-            // Hitung Sisa per Pos
+            // Rincian Sisa Kas
             let sisaUmum = data.infakUmumSisa || (data.saldoAkhir > 0 ? Math.round(data.saldoAkhir * 0.8) : 0);
             let sisaYatim = data.infakYatimSisa || (data.saldoAkhir - sisaUmum);
 
@@ -554,7 +577,7 @@
             checkAdminSession();
         }
 
-        // --- EDIT & DELETE TRANSAKSI (ADMIN KHUSUS) ---
+        // --- EDIT & DELETE TRANSAKSI ---
         function openEditModal(type, index) {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
