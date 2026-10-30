@@ -4,280 +4,259 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Keuangan Masjid Baitul Jannah</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse CDN untuk parsing data CSV Google Sheets -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- FontAwesome Icons -->
+    <!-- Library Pembaca File Excel (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .drag-active { border-color: #059669 !important; background-color: #ecfdf5 !important; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
-    <!-- Header Banner -->
+    <!-- Header -->
     <header class="bg-emerald-700 text-white shadow-md">
         <div class="max-w-4xl mx-auto px-4 py-6 text-center sm:text-left sm:flex sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-xl sm:text-2xl font-bold flex items-center justify-center sm:justify-start gap-2">
                     <i class="fa-solid fa-mosque"></i> Masjid Baitul Jannah
                 </h1>
-                <p class="text-emerald-100 text-xs sm:text-sm mt-1">Transparansi Kas & Laporan Keuangan Jam'iyyah</p>
+                <p class="text-emerald-100 text-xs sm:text-sm mt-1">Transparansi Laporan Keuangan Kas Masjid</p>
             </div>
-            <div class="mt-3 sm:mt-0 text-xs text-emerald-200 bg-emerald-800/60 px-3 py-1.5 rounded-lg inline-block">
-                <i class="fa-solid fa-sync" id="loadingIcon"></i> Realtime Update
-            </div>
+            <button onclick="toggleModal()" class="mt-3 sm:mt-0 bg-white text-emerald-800 px-4 py-2 rounded-lg text-xs font-bold hover:bg-emerald-50 transition shadow">
+                <i class="fa-solid fa-file-excel mr-1 text-emerald-600"></i> Upload Excel
+            </button>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
 
-        <!-- Kontrol Filter Tahun & Bulan -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <label class="text-xs sm:text-sm font-semibold text-slate-600">Pilih Periode:</label>
-                <select id="selectYear" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg p-2 font-medium focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="2026" selected>2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                </select>
-                <select id="selectMonth" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg p-2 font-medium focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="01" selected>Januari</option>
-                    <option value="02">Februari</option>
-                    <option value="03">Maret</option>
-                    <option value="04">April</option>
-                    <option value="05">Mei</option>
-                    <option value="06">Juni</option>
-                    <option value="07">Juli</option>
-                    <option value="08">Agustus</option>
-                    <option value="09">September</option>
-                    <option value="10">Oktober</option>
-                    <option value="11">November</option>
-                    <option value="12">Desember</option>
-                </select>
-            </div>
-            <button onclick="fetchSheetData()" class="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-1">
-                <i class="fa-solid fa-rotate-right"></i> Refresh Data
-            </button>
-        </div>
-
-        <!-- Ringkasan Finansial Utama -->
+        <!-- Ringkasan Saldo Utama -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-200">
-                <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Total Saldo Awal</p>
+                <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Saldo Awal</p>
                 <p id="txtSaldoAwal" class="text-sm sm:text-base font-bold text-slate-700 mt-1">Rp 0</p>
             </div>
             <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-200">
                 <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Total Pemasukan</p>
-                <p id="txtTotalMasuk" class="text-sm sm:text-base font-bold text-emerald-600 mt-1">Rp 0</p>
+                <p id="txtPemasukan" class="text-sm sm:text-base font-bold text-emerald-600 mt-1">Rp 0</p>
             </div>
             <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-slate-200">
                 <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Total Pengeluaran</p>
-                <p id="txtTotalKeluar" class="text-sm sm:text-base font-bold text-rose-600 mt-1">Rp 0</p>
+                <p id="txtPengeluaran" class="text-sm sm:text-base font-bold text-rose-600 mt-1">Rp 0</p>
             </div>
-            <div class="bg-emerald-50 p-3 sm:p-4 rounded-xl shadow-sm border border-emerald-200">
-                <p class="text-[11px] sm:text-xs text-emerald-700 font-semibold">Total Saldo Akhir Kas</p>
-                <p id="txtSaldoAkhir" class="text-base sm:text-lg font-extrabold text-emerald-900 mt-1">Rp 0</p>
+            <div class="bg-purple-50 p-3 sm:p-4 rounded-xl shadow-sm border border-purple-200">
+                <p class="text-[11px] sm:text-xs text-purple-700 font-bold">Total Saldo Akhir</p>
+                <p id="txtSaldoAkhir" class="text-base sm:text-lg font-extrabold text-purple-900 mt-1">Rp 0</p>
             </div>
         </div>
 
-        <!-- RINCIAN SALDO AKHIR PER POS KAS -->
+        <!-- Rincian Saldo per Akad / Dana -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-            <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
-                <i class="fa-solid fa-wallet text-emerald-600"></i>
-                <h3 class="font-bold text-slate-800 text-sm sm:text-base">Rincian Saldo Akhir per Sub-Kas</h3>
-            </div>
-            <!-- Container Kartu Per Pos Dana (Dibuat otomatis oleh JS) -->
-            <div id="containerRincianPos" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <!-- Diisi via JavaScript -->
+            <p class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5">
+                <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo per Akad / Dana
+            </p>
+            <div id="containerAkad" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Otomatis Terisi -->
             </div>
         </div>
 
-        <!-- Tabel Pemasukan -->
+        <!-- Tabel Transaksi Pemasukan -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-            <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 flex justify-between items-center">
-                <h2 class="font-bold text-emerald-800 text-sm sm:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-circle-arrow-down text-emerald-600"></i> Pemasukan Kas
-                </h2>
+            <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 font-bold text-emerald-800 text-sm">
+                <i class="fa-solid fa-arrow-down text-emerald-600 mr-1"></i> Transaksi Pemasukan
             </div>
             <div class="p-4 overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm">
                     <thead>
-                        <tr class="text-slate-500 border-b border-slate-200">
-                            <th class="pb-2 font-semibold w-24">Tanggal</th>
-                            <th class="pb-2 font-semibold">Keterangan</th>
-                            <th class="pb-2 font-semibold text-right">Nominal (Rp)</th>
+                        <tr class="text-slate-400 border-b">
+                            <th class="pb-2">Keterangan</th>
+                            <th class="pb-2">Dana/Akad</th>
+                            <th class="pb-2 text-right">Nominal</th>
                         </tr>
                     </thead>
-                    <tbody id="tblPemasukan" class="divide-y divide-slate-100">
-                        <!-- Items JS -->
-                    </tbody>
+                    <tbody id="tblPemasukan" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Tabel Pengeluaran -->
+        <!-- Tabel Transaksi Pengeluaran -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-            <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 flex justify-between items-center">
-                <h2 class="font-bold text-rose-800 text-sm sm:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-circle-arrow-up text-rose-600"></i> Pengeluaran Operasional
-                </h2>
+            <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 font-bold text-rose-800 text-sm">
+                <i class="fa-solid fa-arrow-up text-rose-600 mr-1"></i> Transaksi Pengeluaran
             </div>
             <div class="p-4 overflow-x-auto">
                 <table class="w-full text-left text-xs sm:text-sm">
                     <thead>
-                        <tr class="text-slate-500 border-b border-slate-200">
-                            <th class="pb-2 font-semibold w-24">Tanggal</th>
-                            <th class="pb-2 font-semibold">Keterangan</th>
-                            <th class="pb-2 font-semibold text-right">Nominal (Rp)</th>
+                        <tr class="text-slate-400 border-b">
+                            <th class="pb-2">Keterangan</th>
+                            <th class="pb-2">Dana/Akad</th>
+                            <th class="pb-2 text-right">Nominal</th>
                         </tr>
                     </thead>
-                    <tbody id="tblPengeluaran" class="divide-y divide-slate-100">
-                        <!-- Items JS -->
-                    </tbody>
+                    <tbody id="tblPengeluaran" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
 
     </main>
 
+    <!-- Modal Drag & Drop Upload Excel -->
+    <div id="modalUpload" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-sm">Upload File Laporan Excel</h3>
+                <button onclick="toggleModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-emerald-500 bg-slate-50 transition">
+                <i class="fa-solid fa-cloud-arrow-up text-4xl text-emerald-600 mb-2"></i>
+                <p class="text-sm font-semibold text-slate-700">Tarik & Lepas File Excel Ke Sini</p>
+                <p class="text-xs text-slate-400 mt-1">Atau klik untuk memilih file (.xlsx)</p>
+                <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ISI URL CSV PUBLISH DARI GOOGLE SHEETS ANDA
-        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_43_buEFtdqYZa_hROJ6eJ1lXgCmXPL-hzwBeFmlXUb5Th3I-h6ovxkCGhNljSoioLpeuqADK6fKh/pub?output=csv';
+        const formatRp = (num) => "Rp " + (Number(num) || 0).toLocaleString("id-ID");
 
-        let rawFinancialData = [];
-
-        const formatRupiah = (num) => "Rp " + (Number(num) || 0).toLocaleString("id-ID");
-
-        function fetchSheetData() {
-            const icon = document.getElementById('loadingIcon');
-            icon.classList.add('fa-spin');
-            
-            Papa.parse(GOOGLE_SHEET_CSV_URL, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    rawFinancialData = results.data;
-                    icon.classList.remove('fa-spin');
-                    renderCurrentPeriod();
-                },
-                error: function(err) {
-                    console.error("Gagal membaca data Google Sheets:", err);
-                    icon.classList.remove('fa-spin');
-                }
-            });
+        function toggleModal() {
+            document.getElementById('modalUpload').classList.toggle('hidden');
         }
 
-        function extractCategory(keterangan) {
-            // Mengambil teks di dalam tanda kurung siku [Infak Umum]
-            const match = keterangan.match(/\[(.*?)\]/);
-            return match ? match[1].trim() : "Infak Umum";
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) processFile(e.target.files[0]);
+        });
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                
+                parseExcelData(json);
+                toggleModal();
+            };
+            reader.readAsArrayBuffer(file);
         }
 
-        function renderCurrentPeriod() {
-            const yr = document.getElementById('selectYear').value;
-            const mo = document.getElementById('selectMonth').value;
-            const periodKey = `${yr}-${mo}`;
-
-            let totalSaldoAwal = 0;
+        function parseExcelData(rows) {
+            let saldoAwal = 0;
             let listPemasukan = [];
             let listPengeluaran = [];
+            
+            let posKas = {
+                "Infak Umum": 0,
+                "Infak Yatim": 0
+            };
 
-            // Rekap Per Pos Kas
-            let posKas = {}; // Contoh: { "Infak Umum": { awal:0, masuk:0, keluar:0 }, "Infak Yatim": {...} }
+            let isPengeluaran = false;
 
-            rawFinancialData.forEach(row => {
-                if(!row.Tanggal) return;
-                
-                let dateParts = row.Tanggal.split('/');
-                let rowPeriod = "";
-                
-                if(dateParts.length === 3) {
-                    rowPeriod = `${dateParts[2]}-${dateParts[1].padStart(2, '0')}`;
-                } else if(row.Tanggal.includes('-')) {
-                    rowPeriod = row.Tanggal.substring(0, 7);
+            rows.forEach(row => {
+                if (!row || !row.length) return;
+                const rowStr = row.join(" ").toLowerCase();
+
+                // Cari Saldo Awal
+                if (rowStr.includes("saldo awal")) {
+                    row.forEach(cell => {
+                        if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
+                    });
                 }
 
-                if (rowPeriod === periodKey) {
-                    const jenis = (row.Jenis || '').trim();
-                    const nominal = parseFloat((row.Nominal || '0').replace(/[^0-9.-]+/g, "")) || 0;
-                    const ket = row.Keterangan || '';
-                    const category = extractCategory(ket);
+                // Cek Tanda Pengeluaran
+                if (rowStr.includes("pengeluaran")) {
+                    isPengeluaran = true;
+                }
 
-                    // Inisialisasi Pos Kas jika belum ada
-                    if (!posKas[category]) {
-                        posKas[category] = { awal: 0, masuk: 0, keluar: 0 };
+                // Ambil Data Baris
+                let ket = "", akad = "", nominal = 0;
+                row.forEach(cell => {
+                    if (typeof cell === 'string') {
+                        if (cell.includes("Infak") || cell.includes("infak")) {
+                            if (cell.length < 25 && !ket) akad = cell;
+                            else if (!ket) ket = cell;
+                        } else if (cell.length > 3 && !ket && !cell.includes("PEMASUKAN") && !cell.includes("PENGELUARAN")) {
+                            ket = cell;
+                        }
+                    } else if (typeof cell === 'number' && cell > 500) {
+                        nominal = cell;
                     }
+                });
 
-                    if (jenis === 'Saldo Awal') {
-                        totalSaldoAwal += nominal;
-                        posKas[category].awal += nominal;
-                    } else if (jenis === 'Pemasukan') {
-                        listPemasukan.push({ tgl: row.Tanggal, ket: ket, jumlah: nominal });
-                        posKas[category].masuk += nominal;
-                    } else if (jenis === 'Pengeluaran') {
-                        listPengeluaran.push({ tgl: row.Tanggal, ket: ket, jumlah: nominal });
-                        posKas[category].keluar += nominal;
+                // Deteksi Otomatis Jika Tidak Ada Kolom Akad Spesifik
+                if (!akad) {
+                    if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
+                        akad = "Infak Yatim";
+                    } else {
+                        akad = "Infak Umum";
+                    }
+                }
+
+                if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal")) {
+                    if (!isPengeluaran) {
+                        listPemasukan.push({ ket, akad, nominal });
+                        if (akad.includes("Yatim")) posKas["Infak Yatim"] += nominal;
+                        else posKas["Infak Umum"] += nominal;
+                    } else {
+                        listPengeluaran.push({ ket, akad, nominal });
+                        if (akad.includes("Yatim")) posKas["Infak Yatim"] -= nominal;
+                        else posKas["Infak Umum"] -= nominal;
                     }
                 }
             });
 
-            let totalMasuk = listPemasukan.reduce((sum, item) => sum + item.jumlah, 0);
-            let totalKeluar = listPengeluaran.reduce((sum, item) => sum + item.jumlah, 0);
-            let totalSaldoAkhir = totalSaldoAwal + totalMasuk - totalKeluar;
+            let totalMasuk = listPemasukan.reduce((sum, i) => sum + i.nominal, 0);
+            let totalKeluar = listPengeluaran.reduce((sum, i) => sum + i.nominal, 0);
+            let saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
 
-            // Render Ringkasan Utama
-            document.getElementById('txtSaldoAwal').innerText = formatRupiah(totalSaldoAwal);
-            document.getElementById('txtTotalMasuk').innerText = formatRupiah(totalMasuk);
-            document.getElementById('txtTotalKeluar').innerText = formatRupiah(totalKeluar);
-            document.getElementById('txtSaldoAkhir').innerText = formatRupiah(totalSaldoAkhir);
+            // Render ke UI
+            document.getElementById('txtSaldoAwal').innerText = formatRp(saldoAwal);
+            document.getElementById('txtPemasukan').innerText = formatRp(totalMasuk);
+            document.getElementById('txtPengeluaran').innerText = formatRp(totalKeluar);
+            document.getElementById('txtSaldoAkhir').innerText = formatRp(saldoAkhir);
 
-            // Render Kartu Rincian Per Pos Dana Kas
-            let htmlRincianPos = "";
-            const keysPos = Object.keys(posKas);
+            // Render Rincian Akad
+            document.getElementById('containerAkad').innerHTML = `
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-600">Infak Umum</span>
+                    <span class="text-sm font-bold text-emerald-600">${formatRp(posKas["Infak Umum"])}</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-600">Infak Yatim</span>
+                    <span class="text-sm font-bold text-emerald-600">${formatRp(posKas["Infak Yatim"])}</span>
+                </div>
+            `;
 
-            if (keysPos.length === 0) {
-                htmlRincianPos = `<p class="text-slate-400 text-xs italic col-span-3">Tidak ada rincian pos dana pada periode ini.</p>`;
-            } else {
-                keysPos.forEach(key => {
-                    const pos = posKas[key];
-                    const saldoAkhirPos = pos.awal + pos.masuk - pos.keluar;
-                    htmlRincianPos += `
-                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs font-bold text-slate-700">${key}</span>
-                                <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">${formatRupiah(saldoAkhirPos)}</span>
-                            </div>
-                            <div class="text-[11px] text-slate-500 space-y-0.5 mt-2 border-t border-slate-200/60 pt-1.5">
-                                <div class="flex justify-between"><span>Awal:</span> <span>${formatRupiah(pos.awal)}</span></div>
-                                <div class="flex justify-between"><span>Masuk:</span> <span class="text-emerald-600">+${formatRupiah(pos.masuk)}</span></div>
-                                <div class="flex justify-between"><span>Keluar:</span> <span class="text-rose-600">-${formatRupiah(pos.keluar)}</span></div>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            document.getElementById('containerRincianPos').innerHTML = htmlRincianPos;
-
-            // Render Tabel Pemasukan
-            document.getElementById('tblPemasukan').innerHTML = listPemasukan.length ? listPemasukan.map(item => `
+            // Render Tabel
+            document.getElementById('tblPemasukan').innerHTML = listPemasukan.map(i => `
                 <tr>
-                    <td class="py-2.5 text-slate-400 font-mono text-xs">${item.tgl}</td>
-                    <td class="py-2.5 text-slate-700">${item.ket}</td>
-                    <td class="py-2.5 text-right font-semibold text-emerald-600">${formatRupiah(item.jumlah)}</td>
+                    <td class="py-2.5 text-slate-700">${i.ket}</td>
+                    <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px]">${i.akad}</span></td>
+                    <td class="py-2.5 text-right font-semibold text-emerald-600">${formatRp(i.nominal)}</td>
                 </tr>
-            `).join('') : `<tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Tidak ada data pemasukan</td></tr>`;
+            `).join('');
 
-            // Render Tabel Pengeluaran
-            document.getElementById('tblPengeluaran').innerHTML = listPengeluaran.length ? listPengeluaran.map(item => `
+            document.getElementById('tblPengeluaran').innerHTML = listPengeluaran.map(i => `
                 <tr>
-                    <td class="py-2.5 text-slate-400 font-mono text-xs">${item.tgl}</td>
-                    <td class="py-2.5 text-slate-700">${item.ket}</td>
-                    <td class="py-2.5 text-right font-semibold text-rose-600">${formatRupiah(item.jumlah)}</td>
+                    <td class="py-2.5 text-slate-700">${i.ket}</td>
+                    <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px]">${i.akad}</span></td>
+                    <td class="py-2.5 text-right font-semibold text-rose-600">${formatRp(i.nominal)}</td>
                 </tr>
-            `).join('') : `<tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Tidak ada data pengeluaran</td></tr>`;
+            `).join('');
         }
-
-        document.addEventListener('DOMContentLoaded', fetchSheetData);
     </script>
 </body>
 </html>
