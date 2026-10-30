@@ -97,7 +97,7 @@
                 </select>
             </div>
             <div class="text-xs text-slate-400">
-                Status: <span id="periodStatus" class="font-semibold text-emerald-600">Tersedia</span>
+                Status: <span id="periodStatus" class="font-semibold text-emerald-600">Memuat Cloud...</span>
             </div>
         </div>
 
@@ -273,10 +273,49 @@
     </div>
 
     <script>
+        // MASUKKAN URL APPS SCRIPT ANDA DI SINI
+        const API_URL = "https://script.google.com/macros/s/AKfycbx...MASUKKAN_URL_APPS_SCRIPT_ANDA_DI_SINI.../exec";
+
+        let masterDatabase = {};
+
         const formatRp = (num) => "Rp " + (Number(num) || 0).toLocaleString("id-ID");
 
         function getStoredPin() {
             return localStorage.getItem('admin_pin_key') || '1234';
+        }
+
+        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS ---
+        async function fetchCloudData() {
+            document.getElementById('periodStatus').innerText = "Memuat Cloud...";
+            try {
+                const res = await fetch(`${API_URL}?action=read`);
+                const json = await res.json();
+                masterDatabase = json || {};
+                renderCurrentPeriod();
+            } catch (e) {
+                console.error("Gagal sinkron Cloud:", e);
+                // Fallback ke LocalStorage jika offline
+                masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
+                renderCurrentPeriod();
+            }
+        }
+
+        // --- SAVE DATA KE CLOUD GOOGLE SHEETS ---
+        async function syncToCloud(updatedDb) {
+            document.getElementById('uploadStatus').innerText = "Menyimpan ke Cloud...";
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedDb)
+                });
+                localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
+                document.getElementById('uploadStatus').innerText = "Tersimpan di Cloud";
+            } catch (e) {
+                console.error("Gagal kirim ke Cloud:", e);
+                localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
+            }
         }
 
         // --- AUTH & ADMIN PANEL ---
@@ -371,7 +410,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER PRESISI MURNI MEMBACA TEKS "TOTAL PENGELUARAN" DARI EXCEL ---
+        // --- PARSER PRESISI MURNI MEMBACA EXCEL ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -396,28 +435,15 @@
 
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                // 1. Membaca Saldo Awal Riil
                 if (rowStr.includes("saldo awal")) {
-                    row.forEach(cell => {
-                        if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
-                    });
+                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) saldoAwal = cell; });
                 }
-
-                // 2. Membaca "TOTAL PEMASUKAN" Langsung dari Teks Excel
                 if (rowStr.includes("total pemasukan")) {
-                    row.forEach(cell => {
-                        if (typeof cell === 'number' && cell > 1000) totalPemasukanExcel = cell;
-                    });
+                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) totalPemasukanExcel = cell; });
                 }
-
-                // 3. Membaca "TOTAL PENGELUARAN" Langsung dari Teks Excel
                 if (rowStr.includes("total pengeluaran")) {
-                    row.forEach(cell => {
-                        if (typeof cell === 'number' && cell > 1000) totalPengeluaranExcel = cell;
-                    });
+                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) totalPengeluaranExcel = cell; });
                 }
-
-                // 4. Membaca Rincian Infak Sisa Jika Ada
                 if (rowStr.includes("infaq umum") || rowStr.includes("infak umum")) {
                     row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakUmumSisa = cell; });
                 }
@@ -425,13 +451,11 @@
                     row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakYatimSisa = cell; });
                 }
 
-                // Switch section pengeluaran
                 if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
                     isPengeluaranSection = true;
                     return;
                 }
 
-                // Mengambil Item Transaksi
                 let tgl = "", ket = "", akad = "", nominal = 0;
 
                 row.forEach((cell) => {
@@ -485,16 +509,14 @@
             savePeriodData(year, month, fileName, saldoAwal, totalPemasukanExcel, totalPengeluaranExcel, infakUmumSisa, infakYatimSisa, listPemasukan, listPengeluaran);
             document.getElementById('selectYear').value = year;
             document.getElementById('selectMonth').value = month;
-            renderCurrentPeriod();
-            alert(`Laporan Periode ${month} ${year} Berhasil Di-upload!`);
         }
 
         function savePeriodData(yr, mo, fileName, saldoAwal, totalPemasukanExcel, totalPengeluaranExcel, infakUmumSisa, infakYatimSisa, listPemasukan, listPengeluaran) {
-            // Gunakan Total Pemasukan dari teks Excel; jika 0 gunakan hasil penjumlahan item
-            let totalMasuk = totalPemasukanExcel || listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
-            
-            // GUNAKAN TOTAL PENGELUARAN MURNI DARI TEKS EXCEL; jika 0 gunakan hasil penjumlahan item
-            let totalKeluar = totalPengeluaranExcel || listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
+            let calcMasuk = listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
+            let calcKeluar = listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
+
+            let totalMasuk = totalPemasukanExcel || calcMasuk;
+            let totalKeluar = totalPengeluaranExcel || calcKeluar;
 
             let sisaUmum = infakUmumSisa;
             let sisaYatim = infakYatimSisa;
@@ -505,13 +527,11 @@
                 sisaYatim = hitungSisa - sisaUmum;
             }
             
-            // Total Saldo Akhir adalah hasil penjumlahan Rincian Akad (Sisa Umum + Sisa Yatim)
             let saldoAkhir = Number(sisaUmum) + Number(sisaYatim);
 
-            let allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-            if(!allDatabase[yr]) allDatabase[yr] = {};
+            if(!masterDatabase[yr]) masterDatabase[yr] = {};
 
-            allDatabase[yr][mo] = {
+            masterDatabase[yr][mo] = {
                 fileName: fileName || "Data Disimpan Admin",
                 saldoAwal: Number(saldoAwal),
                 totalMasuk: Number(totalMasuk),
@@ -523,7 +543,9 @@
                 listPengeluaran
             };
 
-            localStorage.setItem('masjid_db_master', JSON.stringify(allDatabase));
+            syncToCloud(masterDatabase);
+            renderCurrentPeriod();
+            alert(`Laporan Periode ${mo} ${yr} Berhasil Di-upload ke Cloud!`);
         }
 
         // --- RENDER PERIOD DATA ---
@@ -532,9 +554,7 @@
             const mo = document.getElementById('selectMonth').value;
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
 
-            const allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-            const data = (allDatabase[yr] && allDatabase[yr][mo]) ? allDatabase[yr][mo] : null;
-
+            const data = (masterDatabase[yr] && masterDatabase[yr][mo]) ? masterDatabase[yr][mo] : null;
             const statusEl = document.getElementById('periodStatus');
 
             if (!data) {
@@ -592,7 +612,7 @@
                     <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${i.akad}</span></td>
                     <td class="py-2.5 text-right font-semibold text-rose-600">${formatRp(i.nominal)}</td>
                     <td class="py-2.5 text-center col-action ${isAdmin ? '' : 'hidden'}">
-                        <button onclick="openEditModal('pengeluaran', ${idx})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-1.5"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="openEditModal('pemasukan', ${idx})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-1.5"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="deleteTransaction('pengeluaran', ${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
@@ -605,8 +625,7 @@
         function openEditModal(type, index) {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
-            const allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-            const data = allDatabase[yr][mo];
+            const data = masterDatabase[yr][mo];
 
             const item = (type === 'pemasukan') ? data.listPemasukan[index] : data.listPengeluaran[index];
 
@@ -630,8 +649,7 @@
             const type = document.getElementById('editType').value;
             const index = document.getElementById('editIndex').value;
 
-            const allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-            const data = allDatabase[yr][mo];
+            const data = masterDatabase[yr][mo];
 
             const updatedItem = {
                 tgl: document.getElementById('editTgl').value,
@@ -646,18 +664,18 @@
                 data.listPengeluaran[index] = updatedItem;
             }
 
-            savePeriodData(yr, mo, data.fileName, data.saldoAwal, data.totalMasuk, data.totalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
+            let newTotalMasuk = data.listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
+            let newTotalKeluar = data.listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
+
+            savePeriodData(yr, mo, data.fileName, data.saldoAwal, newTotalMasuk, newTotalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
             closeEditModal();
-            renderCurrentPeriod();
-            alert("Data Transaksi Berhasil Diperbarui!");
         }
 
         function deleteTransaction(type, index) {
             if (confirm("Apakah Anda yakin ingin menghapus baris transaksi ini?")) {
                 const yr = document.getElementById('selectYear').value;
                 const mo = document.getElementById('selectMonth').value;
-                const allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-                const data = allDatabase[yr][mo];
+                const data = masterDatabase[yr][mo];
 
                 if (type === 'pemasukan') {
                     data.listPemasukan.splice(index, 1);
@@ -665,8 +683,10 @@
                     data.listPengeluaran.splice(index, 1);
                 }
 
-                savePeriodData(yr, mo, data.fileName, data.saldoAwal, data.totalMasuk, data.totalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
-                renderCurrentPeriod();
+                let newTotalMasuk = data.listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
+                let newTotalKeluar = data.listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
+
+                savePeriodData(yr, mo, data.fileName, data.saldoAwal, newTotalMasuk, newTotalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
             }
         }
 
@@ -674,17 +694,16 @@
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
             if (confirm(`Apakah Anda yakin ingin menghapus data laporan ${mo} ${yr}?`)) {
-                let allDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-                if(allDatabase[yr] && allDatabase[yr][mo]) {
-                    delete allDatabase[yr][mo];
-                    localStorage.setItem('masjid_db_master', JSON.stringify(allDatabase));
+                if(masterDatabase[yr] && masterDatabase[yr][mo]) {
+                    delete masterDatabase[yr][mo];
+                    syncToCloud(masterDatabase);
                 }
                 renderCurrentPeriod();
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            renderCurrentPeriod();
+            fetchCloudData();
         });
     </script>
 </body>
