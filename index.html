@@ -77,12 +77,13 @@
                     <i class="fa-solid fa-calendar-days text-emerald-600"></i> Periode Laporan:
                 </label>
                 <select id="selectYear" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg p-2 font-bold focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2026">2026</option>
                     <option value="2025">2025</option>
                     <option value="2024">2024</option>
                 </select>
                 <select id="selectMonth" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg p-2 font-bold focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="Januari" selected>Januari</option>
+                    <option value="Januari">Januari</option>
                     <option value="Februari">Februari</option>
                     <option value="Maret">Maret</option>
                     <option value="April">April</option>
@@ -273,12 +274,19 @@
     </div>
 
     <script>
-        // ISI DENGAN URL WEB APP HASIL NEW DEPLOYMENT ANDA
-        const API_URL = "https://script.google.com/macros/s/AKfycbzsVGc-mNH_YUuYiW-AKRj7M8pa9rCZkhmLEzzbTEd-A8ymRAs6vzfzvAbRNXr7fTGm5A/exec";
+        // ISI DENGAN URL WEB APP HASIL DEPLOYMENT APPS SCRIPT ANDA
+        const API_URL = "https://script.google.com/macros/s/AKfycbzsVGc-mNH_YUuYiW-AKRj7M8pa9rCZkhmLEzzbTEd-A8ymRAs6vzfzvAbRNXr7fTGm5A/exec ";
 
         let masterDatabase = {};
 
-        const formatRp = (num) => "Rp " + (Number(num) || 0).toLocaleString("id-ID");
+        // FORMAT RUPAN DENGAN DUKUNGAN ANGKAMINUS (NEGATIF)
+        const formatRp = (num) => {
+            let val = Number(num) || 0;
+            if (val < 0) {
+                return "-Rp " + Math.abs(val).toLocaleString("id-ID");
+            }
+            return "Rp " + val.toLocaleString("id-ID");
+        };
 
         function getStoredPin() {
             return localStorage.getItem('admin_pin_key') || '1234';
@@ -409,7 +417,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER PRESISI EXCEL ---
+        // --- PARSER PRESISI DENGAN DUKUNGAN ANGKAMINUS ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -434,20 +442,21 @@
 
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
+                // Menggunakan Math.abs agar angka bernilai MINUS tetap terbaca!
                 if (rowStr.includes("saldo awal")) {
-                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) saldoAwal = cell; });
+                    row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) saldoAwal = cell; });
                 }
                 if (rowStr.includes("total pemasukan")) {
-                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) totalPemasukanExcel = cell; });
+                    row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) totalPemasukanExcel = cell; });
                 }
                 if (rowStr.includes("total pengeluaran")) {
-                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) totalPengeluaranExcel = cell; });
+                    row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) totalPengeluaranExcel = cell; });
                 }
                 if (rowStr.includes("infaq umum") || rowStr.includes("infak umum")) {
-                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakUmumSisa = cell; });
+                    row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) infakUmumSisa = cell; });
                 }
                 if (rowStr.includes("infaq yatim") || rowStr.includes("infak yatim")) {
-                    row.forEach(cell => { if (typeof cell === 'number' && cell > 1000) infakYatimSisa = cell; });
+                    row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) infakYatimSisa = cell; });
                 }
 
                 if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
@@ -463,7 +472,7 @@
                     if (typeof cell === 'number') {
                         if (cell >= 1 && cell <= 31 && !tgl) {
                             tgl = `${cell} ${month.substring(0,3)}`;
-                        } else if (cell > 500) {
+                        } else if (Math.abs(cell) > 100) {
                             nominal = cell;
                         }
                     } 
@@ -579,12 +588,22 @@
             let sisaYatim = Number(data.infakYatimSisa) || 0;
             let totalSaldoAkhirPas = sisaUmum + sisaYatim;
 
-            document.getElementById('txtSaldoAwal').innerText = formatRp(data.saldoAwal);
+            // Menampilkan dengan warna merah jika bernilai minus
+            const elSaldoAwal = document.getElementById('txtSaldoAwal');
+            elSaldoAwal.innerText = formatRp(data.saldoAwal);
+            elSaldoAwal.className = data.saldoAwal < 0 ? "text-sm sm:text-base font-bold text-rose-600 mt-1" : "text-sm sm:text-base font-bold text-slate-700 mt-1";
+
             document.getElementById('txtPemasukan').innerText = formatRp(data.totalMasuk);
             document.getElementById('txtPengeluaran').innerText = formatRp(data.totalKeluar);
-            document.getElementById('txtSaldoAkhir').innerText = formatRp(totalSaldoAkhirPas);
+            
+            const elSaldoAkhir = document.getElementById('txtSaldoAkhir');
+            elSaldoAkhir.innerText = formatRp(totalSaldoAkhirPas);
+            elSaldoAkhir.className = totalSaldoAkhirPas < 0 ? "text-base sm:text-lg font-extrabold text-rose-600 mt-1" : "text-base sm:text-lg font-extrabold text-purple-900 mt-1";
 
-            document.getElementById('txtInfakUmum').innerText = formatRp(sisaUmum);
+            const elInfakUmum = document.getElementById('txtInfakUmum');
+            elInfakUmum.innerText = formatRp(sisaUmum);
+            elInfakUmum.className = sisaUmum < 0 ? "text-sm font-bold text-rose-600" : "text-sm font-bold text-emerald-600";
+
             document.getElementById('txtInfakYatim').innerText = formatRp(sisaYatim);
 
             document.getElementById('uploadStatus').innerText = `File Aktif: ${data.fileName}`;
@@ -595,7 +614,7 @@
                     <td class="py-2.5 text-slate-400 font-mono text-xs">${i.tgl || '-'}</td>
                     <td class="py-2.5 text-slate-700">${i.ket}</td>
                     <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${i.akad}</span></td>
-                    <td class="py-2.5 text-right font-semibold text-emerald-600">${formatRp(i.nominal)}</td>
+                    <td class="py-2.5 text-right font-semibold ${i.nominal < 0 ? 'text-rose-600' : 'text-emerald-600'}">${formatRp(i.nominal)}</td>
                     <td class="py-2.5 text-center col-action ${isAdmin ? '' : 'hidden'}">
                         <button onclick="openEditModal('pemasukan', ${idx})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-1.5"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="deleteTransaction('pemasukan', ${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold"><i class="fa-solid fa-trash"></i></button>
@@ -701,7 +720,24 @@
             }
         }
 
+        // --- DETEKSI OTOMATIS BULAN & TAHUN SAAT INI ---
         document.addEventListener("DOMContentLoaded", () => {
+            const now = new Date();
+            const currentYear = now.getFullYear().toString();
+            const monthsList = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const currentMonth = monthsList[now.getMonth()];
+
+            const selectYearEl = document.getElementById('selectYear');
+            const selectMonthEl = document.getElementById('selectMonth');
+
+            if ([...selectYearEl.options].some(opt => opt.value === currentYear)) {
+                selectYearEl.value = currentYear;
+            }
+            selectMonthEl.value = currentMonth;
+
             fetchCloudData();
         });
     </script>
