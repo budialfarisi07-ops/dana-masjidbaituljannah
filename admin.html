@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Panel Operasional Kas Masjid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Login PIN Screen -->
+    <div id="pinScreen" class="bg-white p-6 rounded-2xl shadow-md max-w-sm w-full">
+        <h2 class="font-bold text-slate-800 text-lg mb-2">Panel Admin Masjid</h2>
+        <p class="text-xs text-slate-500 mb-4">Masukkan PIN Pengurus untuk Mengunggah Laporan</p>
+        <input type="password" id="inputPin" placeholder="Masukkan PIN" class="w-full border p-2.5 rounded-lg text-sm mb-3">
+        <button onclick="checkPin()" class="w-full bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm">Masuk</button>
+    </div>
+
+    <!-- Area Upload Excel (Muncul Setelah PIN Benar) -->
+    <div id="uploadScreen" class="hidden bg-white p-6 rounded-2xl shadow-md max-w-md w-full">
+        <h2 class="font-bold text-slate-800 text-lg mb-4">Upload Laporan Excel</h2>
+        <div id="dropZone" class="border-2 border-dashed border-emerald-400 bg-emerald-50/50 rounded-xl p-8 text-center cursor-pointer">
+            <p class="text-sm font-bold text-emerald-800">Tarik & Lepas File Excel Ke Sini</p>
+            <p class="text-xs text-slate-500 mt-1">atau klik untuk memilih file (.xlsx)</p>
+            <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
+        </div>
+    </div>
+
+    <script>
+        function checkPin() {
+            const pin = document.getElementById('inputPin').value;
+            if (pin === '1234') { // Ganti dengan PIN rahasia Anda
+                document.getElementById('pinScreen').classList.add('hidden');
+                document.getElementById('uploadScreen').classList.remove('hidden');
+            } else {
+                alert('PIN Salah!');
+            }
+        }
+    </script>
+</body>
+</html>
