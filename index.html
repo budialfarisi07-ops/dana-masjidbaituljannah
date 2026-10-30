@@ -4,29 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Keuangan Masjid Baitul Jannah</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx) untuk membaca file Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .drag-active { border-color: #059669 !important; background-color: #ecfdf5 !important; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
-    <!-- Header Publik -->
+    <!-- Header Navbar -->
     <header class="bg-emerald-700 text-white shadow-md">
-        <div class="max-w-4xl mx-auto px-4 py-6 text-center sm:text-left sm:flex sm:items-center sm:justify-between">
+        <div class="max-w-4xl mx-auto px-4 py-5 flex justify-between items-center">
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold flex items-center justify-center sm:justify-start gap-2">
+                <h1 class="text-lg sm:text-2xl font-bold flex items-center gap-2">
                     <i class="fa-solid fa-mosque"></i> Masjid Baitul Jannah
                 </h1>
-                <p class="text-emerald-100 text-xs sm:text-sm mt-1">Transparansi Laporan Keuangan Kas Masjid</p>
+                <p class="text-emerald-100 text-xs sm:text-sm mt-0.5">Transparansi Kas & Laporan Keuangan</p>
             </div>
-            <span class="mt-3 sm:mt-0 text-xs bg-emerald-800 text-emerald-100 px-3 py-1.5 rounded-full inline-block">
-                <i class="fa-solid fa-shield-halved mr-1"></i> Laporan Resmi Jamaah
-            </span>
+            
+            <!-- Tombol Navigasi Admin / Status Login -->
+            <div>
+                <button id="btnLogin" onclick="openLoginModal()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition border border-white/20">
+                    <i class="fa-solid fa-lock"></i> Login Admin
+                </button>
+                <div id="adminBadge" class="hidden flex items-center gap-2">
+                    <span class="bg-emerald-800 text-emerald-200 text-xs px-2.5 py-1 rounded-full font-medium border border-emerald-600">
+                        <i class="fa-solid fa-user-shield mr-1"></i> Admin
+                    </span>
+                    <button onclick="logoutAdmin()" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition">
+                        Logout
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
 
-        <!-- Kartu Ringkasan -->
+        <!-- PANEL ADMIN KHUSUS (MANGKAT / MUNCUL HANYA SETELAH LOGIN) -->
+        <div id="adminPanel" class="hidden bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-5 mb-6 shadow-sm">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-emerald-200">
+                <h3 class="font-bold text-emerald-900 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-emerald-700"></i> Panel Pengaturan & Upload Admin
+                </h3>
+                <span class="text-[11px] text-emerald-700 font-medium">Sistem Upload Aktif</span>
+            </div>
+
+            <!-- Drag & Drop Zone -->
+            <div id="dropZone" class="border-2 border-dashed border-emerald-400 bg-white rounded-xl p-6 text-center cursor-pointer hover:border-emerald-600 transition shadow-inner">
+                <i class="fa-solid fa-file-excel text-3xl text-emerald-600 mb-2"></i>
+                <p class="text-xs sm:text-sm font-bold text-slate-700">Tarik & Lepas File Laporan Excel (.xlsx) Ke Sini</p>
+                <p class="text-[11px] text-slate-400 mt-1">atau klik di sini untuk memilih file dari komputer/HP</p>
+                <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden">
+            </div>
+
+            <div class="mt-3 flex justify-between items-center text-xs">
+                <button onclick="resetData()" class="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> Hapus & Reset Data Kas
+                </button>
+                <span id="uploadStatus" class="text-slate-500 italic">Belum ada file di-upload</span>
+            </div>
+        </div>
+
+        <!-- Ringkasan Kas Utama -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                 <p class="text-[11px] text-slate-500 font-medium">Saldo Awal</p>
@@ -46,37 +90,312 @@
             </div>
         </div>
 
-        <!-- Rincian Akad / Dana -->
+        <!-- Rincian Saldo per Akad / Dana -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
             <p class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5">
                 <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo per Akad / Dana
             </p>
             <div id="containerAkad" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- Data Rincian Otomatis -->
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-600">Infak Umum</span>
+                    <span id="txtInfakUmum" class="text-sm font-bold text-emerald-600">Rp 0</span>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-600">Infak Yatim</span>
+                    <span id="txtInfakYatim" class="text-sm font-bold text-emerald-600">Rp 0</span>
+                </div>
             </div>
         </div>
 
-        <!-- Tabel Pemasukan & Pengeluaran (Read Only) -->
-        <div class="space-y-6">
-            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                <div class="bg-emerald-50 px-4 py-3 font-bold text-emerald-800 text-sm">Pemasukan Kas</div>
-                <div class="p-4 overflow-x-auto">
-                    <table class="w-full text-left text-xs sm:text-sm">
-                        <tbody id="tblPemasukan" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
+        <!-- Tabel Transaksi Pemasukan -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+            <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 font-bold text-emerald-800 text-sm flex justify-between items-center">
+                <span><i class="fa-solid fa-arrow-down text-emerald-600 mr-1.5"></i> Transaksi Pemasukan</span>
             </div>
+            <div class="p-4 overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-200">
+                            <th class="pb-2">Keterangan</th>
+                            <th class="pb-2 w-28">Dana/Akad</th>
+                            <th class="pb-2 text-right">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblPemasukan" class="divide-y divide-slate-100">
+                        <tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Belum ada data laporan</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                <div class="bg-rose-50 px-4 py-3 font-bold text-rose-800 text-sm">Pengeluaran Kas</div>
-                <div class="p-4 overflow-x-auto">
-                    <table class="w-full text-left text-xs sm:text-sm">
-                        <tbody id="tblPengeluaran" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
+        <!-- Tabel Transaksi Pengeluaran -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+            <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 font-bold text-rose-800 text-sm flex justify-between items-center">
+                <span><i class="fa-solid fa-arrow-up text-rose-600 mr-1.5"></i> Transaksi Pengeluaran</span>
+            </div>
+            <div class="p-4 overflow-x-auto">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead>
+                        <tr class="text-slate-400 border-b border-slate-200">
+                            <th class="pb-2">Keterangan</th>
+                            <th class="pb-2 w-28">Dana/Akad</th>
+                            <th class="pb-2 text-right">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblPengeluaran" class="divide-y divide-slate-100">
+                        <tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Belum ada data laporan</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
     </main>
+
+    <!-- Modal Pop-up Login Admin -->
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-user-lock text-emerald-600"></i> Login Admin
+                </h3>
+                <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <p class="text-xs text-slate-500 mb-3">Masukkan PIN Admin untuk mengunggah file laporan kas.</p>
+            
+            <input type="password" id="inputPin" placeholder="Masukkan PIN (Default: 1234)" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            
+            <div class="flex gap-2">
+                <button onclick="closeLoginModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">Batal</button>
+                <button onclick="submitLogin()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PIN_ADMIN_RAHASIA = "1234"; // Ganti PIN Admin Anda di sini
+        const formatRp = (num) => "Rp " + (Number(num) || 0).toLocaleString("id-ID");
+
+        // --- MANAJEMEN STATUS LOGIN ADMIN ---
+        function checkAdminSession() {
+            const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
+            if (isAdmin) {
+                document.getElementById('btnLogin').classList.add('hidden');
+                document.getElementById('adminBadge').classList.remove('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+            } else {
+                document.getElementById('btnLogin').classList.remove('hidden');
+                document.getElementById('adminBadge').classList.add('hidden');
+                document.getElementById('adminPanel').classList.add('hidden');
+            }
+        }
+
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('inputPin').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('inputPin').value = '';
+        }
+
+        function submitLogin() {
+            const pin = document.getElementById('inputPin').value;
+            if (pin === PIN_ADMIN_RAHASIA) {
+                localStorage.setItem('is_admin_logged_in', 'true');
+                closeLoginModal();
+                checkAdminSession();
+                alert("Login Admin Berhasil!");
+            } else {
+                alert("PIN Salah! Akses ditolak.");
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('is_admin_logged_in');
+            checkAdminSession();
+        }
+
+        // --- DRAG & DROP FILE HANDLER ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        if(dropZone) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            ['dragenter', 'dragover'].forEach(name => {
+                dropZone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-active');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(name => {
+                dropZone.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-active');
+                });
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length) handleFile(files[0]);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) handleFile(e.target.files[0]);
+            });
+        }
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                
+                parseAndSaveExcel(json, file.name);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- SMART PARSER EXCEL (UNTUK MODEL JANUARI DAN AGUSTUS) ---
+        function parseAndSaveExcel(rows, fileName) {
+            let saldoAwal = 0;
+            let listPemasukan = [];
+            let listPengeluaran = [];
+            let posKas = { "Infak Umum": 0, "Infak Yatim": 0 };
+            let isPengeluaran = false;
+
+            rows.forEach(row => {
+                if (!row || !row.length) return;
+                const rowStr = row.join(" ").toLowerCase();
+
+                // Deteksi Saldo Awal
+                if (rowStr.includes("saldo awal")) {
+                    row.forEach(cell => {
+                        if (typeof cell === 'number' && cell > 1000) saldoAwal = cell;
+                    });
+                }
+
+                // Cek Perubahan Section Pengeluaran
+                if (rowStr.includes("pengeluaran") && !rowStr.includes("kategori")) {
+                    isPengeluaran = true;
+                }
+
+                // Ambil Data Baris
+                let ket = "", akad = "", nominal = 0;
+                row.forEach(cell => {
+                    if (typeof cell === 'string') {
+                        let cLower = cell.toLowerCase();
+                        if (cLower.includes("infak") && cell.length < 30) {
+                            akad = cell;
+                        } else if (cell.length > 3 && !ket && !cLower.includes("pemasukan") && !cLower.includes("pengeluaran") && !cLower.includes("laporan")) {
+                            ket = cell;
+                        }
+                    } else if (typeof cell === 'number' && cell > 500) {
+                        nominal = cell;
+                    }
+                });
+
+                // Penentuan Akad Otomatis (Autodetect)
+                if (!akad) {
+                    if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
+                        akad = "Infak Yatim";
+                    } else {
+                        akad = "Infak Umum";
+                    }
+                }
+
+                if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal")) {
+                    if (!isPengeluaran) {
+                        listPemasukan.push({ ket, akad, nominal });
+                        if (akad.toLowerCase().includes("yatim")) posKas["Infak Yatim"] += nominal;
+                        else posKas["Infak Umum"] += nominal;
+                    } else {
+                        listPengeluaran.push({ ket, akad, nominal });
+                        if (akad.toLowerCase().includes("yatim")) posKas["Infak Yatim"] -= nominal;
+                        else posKas["Infak Umum"] -= nominal;
+                    }
+                }
+            });
+
+            let totalMasuk = listPemasukan.reduce((sum, i) => sum + i.nominal, 0);
+            let totalKeluar = listPengeluaran.reduce((sum, i) => sum + i.nominal, 0);
+            let saldoAkhir = saldoAwal + totalMasuk - totalKeluar;
+
+            // Paketkan Data
+            const parsedData = {
+                fileName,
+                saldoAwal,
+                totalMasuk,
+                totalKeluar,
+                saldoAkhir,
+                posKas,
+                listPemasukan,
+                listPengeluaran
+            };
+
+            // SIMPAN PERMANEN KE LOCALSTORAGE BROWSER
+            localStorage.setItem('masjid_saved_data', JSON.stringify(parsedData));
+            
+            document.getElementById('uploadStatus').innerText = `File "${fileName}" Berhasil Di-upload!`;
+            renderDataFromStorage();
+            alert(`Laporan "${fileName}" Berhasil Di-upload dan Disimpan!`);
+        }
+
+        // --- RENDER DATA DARI STORAGE (DAPAT DILIHAT PUBLIK & ADMIN) ---
+        function renderDataFromStorage() {
+            const saved = localStorage.getItem('masjid_saved_data');
+            if (!saved) return;
+
+            const data = JSON.parse(saved);
+
+            document.getElementById('txtSaldoAwal').innerText = formatRp(data.saldoAwal);
+            document.getElementById('txtPemasukan').innerText = formatRp(data.totalMasuk);
+            document.getElementById('txtPengeluaran').innerText = formatRp(data.totalKeluar);
+            document.getElementById('txtSaldoAkhir').innerText = formatRp(data.saldoAkhir);
+
+            document.getElementById('txtInfakUmum').innerText = formatRp(data.posKas["Infak Umum"]);
+            document.getElementById('txtInfakYatim').innerText = formatRp(data.posKas["Infak Yatim"]);
+
+            if (data.fileName) {
+                document.getElementById('uploadStatus').innerText = `File Aktif: ${data.fileName}`;
+            }
+
+            // Render Tabel Pemasukan
+            document.getElementById('tblPemasukan').innerHTML = data.listPemasukan.length ? data.listPemasukan.map(i => `
+                <tr>
+                    <td class="py-2.5 text-slate-700">${i.ket}</td>
+                    <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${i.akad}</span></td>
+                    <td class="py-2.5 text-right font-semibold text-emerald-600">${formatRp(i.nominal)}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Tidak ada transaksi pemasukan</td></tr>`;
+
+            // Render Tabel Pengeluaran
+            document.getElementById('tblPengeluaran').innerHTML = data.listPengeluaran.length ? data.listPengeluaran.map(i => `
+                <tr>
+                    <td class="py-2.5 text-slate-700">${i.ket}</td>
+                    <td class="py-2.5"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${i.akad}</span></td>
+                    <td class="py-2.5 text-right font-semibold text-rose-600">${formatRp(i.nominal)}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="3" class="py-4 text-center text-slate-400 italic">Tidak ada transaksi pengeluaran</td></tr>`;
+        }
+
+        function resetData() {
+            if (confirm("Apakah Anda yakin ingin menghapus data laporan kas?")) {
+                localStorage.removeItem('masjid_saved_data');
+                location.reload();
+            }
+        }
+
+        // Inisialisasi Tampilan saat Web Dibuka
+        document.addEventListener("DOMContentLoaded", () => {
+            checkAdminSession();
+            renderDataFromStorage();
+        });
+    </script>
 </body>
 </html>
