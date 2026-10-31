@@ -291,38 +291,57 @@
             return localStorage.getItem('admin_pin_key') || '1234';
         }
 
-        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS (OPTIMAL UNTUK HP) ---
-async function fetchCloudData() {
-    const statusEl = document.getElementById('periodStatus');
-    if (statusEl) statusEl.innerText = "Memuat Cloud...";
-    
-    try {
-        // Menggunakan redirect: 'follow' agar browser HP mengikuti rute Google Apps Script
-        const res = await fetch(`${API_URL}?action=read`, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
-        const json = await res.json();
-        
-        if (json && Object.keys(json).length > 0) {
-            masterDatabase = json;
-            // Simpan juga ke localStorage sebagai cadangan offline
-            localStorage.setItem('masjid_db_master', JSON.stringify(json));
-        } else {
-            // Jika cloud kosong, ambil dari localStorage
-            masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
+        // --- FUNGSI MENGATUR DEFAULT TANGGAL KE BULAN SEBELUMNYA ---
+        function setDefaultToPreviousMonth() {
+            const now = new Date();
+            // Mundurkan 1 bulan dari tanggal realtime saat ini
+            now.setMonth(now.getMonth() - 1);
+
+            const prevYear = now.getFullYear().toString();
+            const monthsList = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const prevMonth = monthsList[now.getMonth()];
+
+            const selectYearEl = document.getElementById('selectYear');
+            const selectMonthEl = document.getElementById('selectMonth');
+
+            if (selectYearEl && [...selectYearEl.options].some(opt => opt.value === prevYear)) {
+                selectYearEl.value = prevYear;
+            }
+            if (selectMonthEl) {
+                selectMonthEl.value = prevMonth;
+            }
         }
-        
-        renderCurrentPeriod();
-    } catch (e) {
-        console.error("Gagal sinkron Cloud:", e);
-        // Fallback jika koneksi HP terganggu
-        masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-        renderCurrentPeriod();
-    }
-}
-        
+
+        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS ---
+        async function fetchCloudData() {
+            const statusEl = document.getElementById('periodStatus');
+            if (statusEl) statusEl.innerText = "Memuat Cloud...";
+            
+            try {
+                const res = await fetch(`${API_URL}?action=read`, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                const json = await res.json();
+                
+                if (json && Object.keys(json).length > 0) {
+                    masterDatabase = json;
+                    localStorage.setItem('masjid_db_master', JSON.stringify(json));
+                } else {
+                    masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
+                }
+                
+                renderCurrentPeriod();
+            } catch (e) {
+                console.error("Gagal sinkron Cloud:", e);
+                masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
+                renderCurrentPeriod();
+            }
+        }
 
         // --- SAVE DATA KE CLOUD GOOGLE SHEETS ---
         async function syncToCloud(updatedDb) {
@@ -434,7 +453,7 @@ async function fetchCloudData() {
             reader.readAsArrayBuffer(file);
         }
 
-        // --- SMART HEADER PARSER LENGKAP (MEMBACA LOGIKA KOLOM HEADER DENGAN PRESISI) ---
+        // --- PARSER PRESISI LOGIKA STABIL ---
         function parseAndSaveExcel(rows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -454,16 +473,12 @@ async function fetchCloudData() {
             let listPengeluaran = [];
             let isPengeluaranSection = false;
 
-            // Indeks posisi kolom berdasar Header
-            let idxTgl = -1, idxKet = -1, idxAkad = -1, idxNominal = -1;
-
             rows.forEach(row => {
                 if (!row || !row.length) return;
 
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                // 1. Deteksi Ringkasan Utama
-                if (rowStr.includes("saldo awal") && !rowStr.includes("minus") && !rowStr.includes("september") && !rowStr.includes("agustus")) {
+                if (rowStr.includes("saldo awal")) {
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) saldoAwal = cell; });
                 }
                 if (rowStr.includes("total pemasukan")) {
@@ -479,111 +494,57 @@ async function fetchCloudData() {
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) infakYatimSisa = cell; });
                 }
 
-                // 2. Deteksi Perpindahan Ke Section Pengeluaran
-                if (rowStr.includes("pengeluaran") && !rowStr.includes("total") && !rowStr.includes("bisyarah")) {
+                if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
                     isPengeluaranSection = true;
                     return;
                 }
 
-                // 3. Deteksi Baris Header Kolom (No | Tanggal | Keterangan | Dana/Akad | Nominal)
-                if (rowStr.includes("tanggal") && (rowStr.includes("keterangan") || rowStr.includes("uraian"))) {
-                    row.forEach((cell, i) => {
-                        let cStr = String(cell || '').toLowerCase();
-                        if (cStr.includes("tanggal")) idxTgl = i;
-                        if (cStr.includes("keterangan") || cStr.includes("uraian")) idxKet = i;
-                        if (cStr.includes("dana") || cStr.includes("akad")) idxAkad = i;
-                        if (cStr.includes("nominal")) idxNominal = i;
-                    });
-                    return; // Lewati baris header itu sendiri
-                }
-
-                // 4. Ekstrak Data Transaksi Berdasarkan Header Posisi / Tipe
                 let tgl = "", ket = "", akad = "", nominal = 0;
 
-                // Jika posisi Header terdeteksi presisi
-                if (idxKet !== -1 && idxNominal !== -1) {
-                    let cellKet = String(row[idxKet] || '').trim();
-                    let cellNom = row[idxNominal];
+                row.forEach((cell) => {
+                    if (cell === null || cell === undefined) return;
 
-                    if (cellKet && cellNom !== undefined && cellNom !== null && typeof cellNom === 'number') {
-                        ket = cellKet;
-                        nominal = cellNom;
-                        
-                        if (idxTgl !== -1 && row[idxTgl] !== undefined) {
-                            let rawTgl = row[idxTgl];
-                            if (rawTgl instanceof Date) {
-                                tgl = `${rawTgl.getDate()} ${month.substring(0,3)}`;
-                            } else if (typeof rawTgl === 'string') {
-                                tgl = rawTgl.replace('2026-', '').replace('2025-', '');
-                            } else if (typeof rawTgl === 'number') {
-                                tgl = `${rawTgl} ${month.substring(0,3)}`;
-                            }
+                    if (typeof cell === 'number') {
+                        if (cell >= 1 && cell <= 31 && !tgl) {
+                            tgl = `${cell} ${month.substring(0,3)}`;
+                        } else if (Math.abs(cell) > 100) {
+                            nominal = cell;
                         }
+                    } 
+                    else if (typeof cell === 'string') {
+                        let cTrim = cell.trim();
+                        let cLower = cTrim.toLowerCase();
 
-                        if (idxAkad !== -1 && row[idxAkad]) {
-                            akad = String(row[idxAkad]).trim();
+                        if (cLower.includes("infak") && cTrim.length < 30) {
+                            akad = cTrim;
+                        } 
+                        else if (
+                            cTrim.length > 2 && 
+                            !ket && 
+                            !monthsList.some(m => m.toLowerCase() === cLower) &&
+                            !cLower.includes("pemasukan") && 
+                            !cLower.includes("pengeluaran") && 
+                            !cLower.includes("laporan") && 
+                            !cLower.includes("tanggal")
+                        ) {
+                            ket = cTrim;
                         }
                     }
-                }
+                });
 
-                // Fallback pencarian fleksibel untuk format Excel lama
-                if (!ket || !nominal) {
-                    row.forEach((cell) => {
-                        if (cell === null || cell === undefined) return;
-
-                        if (typeof cell === 'number') {
-                            if (cell >= 1 && cell <= 31 && !tgl) {
-                                tgl = `${cell} ${month.substring(0,3)}`;
-                            } else if (Math.abs(cell) > 100) {
-                                nominal = cell;
-                            }
-                        } 
-                        else if (typeof cell === 'string') {
-                            let cTrim = cell.trim();
-                            let cLower = cTrim.toLowerCase();
-
-                            if (cLower.includes("infak") && cTrim.length < 30) {
-                                akad = cTrim;
-                            } 
-                            else if (
-                                cTrim.length > 2 && 
-                                !ket && 
-                                !cLower.includes("2026") && !cLower.includes("2025") &&
-                                !monthsList.some(m => m.toLowerCase() === cLower) &&
-                                !cLower.includes("pemasukan") && 
-                                !cLower.includes("pengeluaran") && 
-                                !cLower.includes("laporan") && 
-                                !cLower.includes("tanggal")
-                            ) {
-                                ket = cTrim;
-                            }
-                        }
-                    });
-                }
-
-                // Isi Akad Default
                 if (!akad) {
                     if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
                         akad = "Infak Yatim";
-                    } else if (ket.toLowerCase().includes("umum & yatim")) {
-                        akad = "Infak Umum & Yatim";
                     } else {
                         akad = "Infak Umum";
                     }
                 }
 
-                // Masukkan ke daftar jika baris transaksi valid
-                if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("rincian")) {
-                    // Jika ini baris Saldo Awal di dalam tabel Pemasukan, ambil sebagai Saldo Awal resmi jika saldoAwal belum terisi
-                    if (ket.toLowerCase().includes("saldo awal")) {
-                        if (!saldoAwal) saldoAwal = nominal;
-                    } 
-                    else {
-                        if (!isPengeluaranSection) {
-                            listPemasukan.push({ tgl: tgl || "-", ket, akad, nominal });
-                        } else {
-                            listPengeluaran.push({ tgl: tgl || "-", ket, akad, nominal });
-                        }
+                if (ket && nominal && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal") && !ket.toLowerCase().includes("rincian")) {
+                    if (!isPengeluaranSection) {
+                        listPemasukan.push({ tgl: tgl || "-", ket, akad, nominal });
+                    } else {
+                        listPengeluaran.push({ tgl: tgl || "-", ket, akad, nominal });
                     }
                 }
             });
@@ -793,32 +754,13 @@ async function fetchCloudData() {
             }
         }
 
-      // --- DETEKSI OTOMATIS BULAN SEBELUMNYA (PREVIOUS MONTH DEFAULT) ---
-document.addEventListener("DOMContentLoaded", () => {
-    const now = new Date();
-    
-    // Mundurkan 1 bulan dari waktu realtime saat ini
-    now.setMonth(now.getMonth() - 1);
-    
-    const prevYear = now.getFullYear().toString();
-    const monthsList = [
-        "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
-    const prevMonth = monthsList[now.getMonth()];
-
-    const selectYearEl = document.getElementById('selectYear');
-    const selectMonthEl = document.getElementById('selectMonth');
-
-    // Set nilai dropdown ke tahun dan bulan sebelumnya secara otomatis
-    if ([...selectYearEl.options].some(opt => opt.value === prevYear)) {
-        selectYearEl.value = prevYear;
-    }
-    selectMonthEl.value = prevMonth;
-
-    // Ambil data dari Cloud Google Sheets
-    fetchCloudData();
-});
+        // --- INSISIALISASI UTAMA: SET BULAN SEBELUMNYA BARU AMBIL CLOUD ---
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. Eksekusi penguncian bulan sebelumnya secara instan
+            setDefaultToPreviousMonth();
+            // 2. Baru panggil pemuatan data dari cloud
+            fetchCloudData();
+        });
     </script>
 </body>
 </html>
