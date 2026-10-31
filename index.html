@@ -793,26 +793,32 @@ async function fetchCloudData() {
             }
         }
 
-        // --- DETEKSI OTOMATIS BULAN & TAHUN SAAT INI ---
-        document.addEventListener("DOMContentLoaded", () => {
-            const now = new Date();
-            const currentYear = now.getFullYear().toString();
-            const monthsList = [
-                "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-            ];
-            const currentMonth = monthsList[now.getMonth()];
+      // --- DETEKSI OTOMATIS BULAN SEBELUMNYA (PREVIOUS MONTH DEFAULT) ---
+document.addEventListener("DOMContentLoaded", () => {
+    const now = new Date();
+    
+    // Mundurkan 1 bulan dari waktu realtime saat ini
+    now.setMonth(now.getMonth() - 1);
+    
+    const prevYear = now.getFullYear().toString();
+    const monthsList = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+    const prevMonth = monthsList[now.getMonth()];
 
-            const selectYearEl = document.getElementById('selectYear');
-            const selectMonthEl = document.getElementById('selectMonth');
+    const selectYearEl = document.getElementById('selectYear');
+    const selectMonthEl = document.getElementById('selectMonth');
 
-            if ([...selectYearEl.options].some(opt => opt.value === currentYear)) {
-                selectYearEl.value = currentYear;
-            }
-            selectMonthEl.value = currentMonth;
+    // Set nilai dropdown ke tahun dan bulan sebelumnya secara otomatis
+    if ([...selectYearEl.options].some(opt => opt.value === prevYear)) {
+        selectYearEl.value = prevYear;
+    }
+    selectMonthEl.value = prevMonth;
 
-            fetchCloudData();
-        });
+    // Ambil data dari Cloud Google Sheets
+    fetchCloudData();
+});
     </script>
 </body>
 </html>
