@@ -275,7 +275,7 @@
 
     <script>
         // ISI DENGAN URL WEB APP HASIL DEPLOYMENT APPS SCRIPT ANDA
-        const API_URL = "https://script.google.com/macros/s/AKfycbzsVGc-mNH_YUuYiW-AKRj7M8pa9rCZkhmLEzzbTEd-A8ymRAs6vzfzvAbRNXr7fTGm5A/exec ";
+        const API_URL = "https://script.google.com/macros/s/AKfycbygWxhXYf0epCKL2Y27uM7NiRv_tZvD9By7_J84ZmnZFt8Lk2PBDHzgpcbJgyN93jx74A/exec";
 
         let masterDatabase = {};
 
@@ -291,20 +291,38 @@
             return localStorage.getItem('admin_pin_key') || '1234';
         }
 
-        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS ---
-        async function fetchCloudData() {
-            document.getElementById('periodStatus').innerText = "Memuat Cloud...";
-            try {
-                const res = await fetch(`${API_URL}?action=read`);
-                const json = await res.json();
-                masterDatabase = json || {};
-                renderCurrentPeriod();
-            } catch (e) {
-                console.error("Gagal sinkron Cloud:", e);
-                masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-                renderCurrentPeriod();
-            }
+        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS (OPTIMAL UNTUK HP) ---
+async function fetchCloudData() {
+    const statusEl = document.getElementById('periodStatus');
+    if (statusEl) statusEl.innerText = "Memuat Cloud...";
+    
+    try {
+        // Menggunakan redirect: 'follow' agar browser HP mengikuti rute Google Apps Script
+        const res = await fetch(`${API_URL}?action=read`, {
+            method: 'GET',
+            redirect: 'follow'
+        });
+        
+        const json = await res.json();
+        
+        if (json && Object.keys(json).length > 0) {
+            masterDatabase = json;
+            // Simpan juga ke localStorage sebagai cadangan offline
+            localStorage.setItem('masjid_db_master', JSON.stringify(json));
+        } else {
+            // Jika cloud kosong, ambil dari localStorage
+            masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
         }
+        
+        renderCurrentPeriod();
+    } catch (e) {
+        console.error("Gagal sinkron Cloud:", e);
+        // Fallback jika koneksi HP terganggu
+        masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
+        renderCurrentPeriod();
+    }
+}
+        
 
         // --- SAVE DATA KE CLOUD GOOGLE SHEETS ---
         async function syncToCloud(updatedDb) {
