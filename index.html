@@ -291,10 +291,13 @@
             return localStorage.getItem('admin_pin_key') || '1234';
         }
 
-        // --- FUNGSI MENGATUR DEFAULT TANGGAL KE BULAN SEBELUMNYA ---
+        // --- FUNGSI TANGGAL PRESISI TANGGAL 1 (BEBAS DARI OVERFLOW AKHIR BULAN) ---
         function setDefaultToPreviousMonth() {
             const now = new Date();
-            // Mundurkan 1 bulan dari tanggal realtime saat ini
+            
+            // PENTING: Kunci ke tanggal 1 terlebih dahulu sebelum mengurangi bulan!
+            // Mencegah bug overflow "31 September" -> "1 Oktober" saat dieksekusi tanggal 31
+            now.setDate(1); 
             now.setMonth(now.getMonth() - 1);
 
             const prevYear = now.getFullYear().toString();
@@ -754,11 +757,11 @@
             }
         }
 
-        // --- INSISIALISASI UTAMA: SET BULAN SEBELUMNYA BARU AMBIL CLOUD ---
+        // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. Eksekusi penguncian bulan sebelumnya secara instan
+            // Step 1: Set dropdown ke bulan sebelumnya secara presisi (September)
             setDefaultToPreviousMonth();
-            // 2. Baru panggil pemuatan data dari cloud
+            // Step 2: Baru load data cloud
             fetchCloudData();
         });
     </script>
