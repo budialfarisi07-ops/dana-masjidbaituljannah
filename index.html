@@ -8,6 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (xlsx) untuk membaca file Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF & AutoTable CDN untuk Export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -99,6 +103,20 @@
             </div>
             <div class="text-xs text-slate-400">
                 Status: <span id="periodStatus" class="font-semibold text-emerald-600">Memuat Cloud...</span>
+            </div>
+            <!-- MENU DROPDOWN DOWNLOAD LAPORAN (PUBLIK & ADMIN) -->
+            <div class="relative inline-block text-left">
+                <button onclick="toggleDownloadDropdown()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow transition">
+                    <i class="fa-solid fa-file-arrow-down"></i> Unduh Laporan <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </button>
+                <div id="downloadDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1">
+                    <button onclick="exportToExcel()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i> Download Format Excel (.xlsx)
+                    </button>
+                    <button onclick="exportToPDF()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-rose-50 hover:text-rose-700 font-semibold flex items-center gap-2 border-t border-slate-100">
+                        <i class="fa-solid fa-file-pdf text-rose-600 text-sm"></i> Download Format PDF (.pdf)
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -777,7 +795,174 @@
                 renderCurrentPeriod();
             }
         }
+// --- FITUR DOWNLOAD EXCEL & PDF ---
+        function toggleDownloadDropdown() {
+            const dropdown = document.getElementById('downloadDropdownMenu');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        }
 
+        window.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('downloadDropdownMenu');
+            const button = e.target.closest('button');
+            if (!button || !button.getAttribute('onclick') || !button.getAttribute('onclick').includes('toggleDownloadDropdown')) {
+                if (dropdown && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        });
+
+        // 1. EXPORT TO EXCEL (.XLSX)
+        function exportToExcel() {
+            const yr = document.getElementById('selectYear').value;
+            const mo = document.getElementById('selectMonth').value;
+            const data = (masterDatabase[yr] && masterDatabase[yr][mo]) ? masterDatabase[yr][mo] : null;
+
+            if (!data) {
+                alert(`Tidak ada data laporan untuk periode ${mo} ${yr} untuk diunduh.`);
+                return;
+            }
+
+            let aoa = [
+                ["LAPORAN KEUANGAN MASJID BAITUL JANNAH"],
+                [`Periode: ${mo} ${yr}`],
+                [],
+                ["SALDO AWAL", "", "", "", data.saldoAwal],
+                ["PEMASUKAN"],
+                ["Tanggal", "Keterangan", "Dana/Akad", "Nominal"]
+            ];
+
+            (data.listPemasukan || []).forEach(i => {
+                aoa.push([i.tgl || "-", i.ket, i.akad, Number(i.nominal)]);
+            });
+            aoa.push(["Total Pemasukan", "", "", data.totalMasuk]);
+            aoa.push([]);
+
+            aoa.push(["PENGELUARAN"]);
+            aoa.push(["Tanggal", "Keterangan", "Dana/Akad", "Nominal"]);
+            (data.listPengeluaran || []).forEach(i => {
+                aoa.push([i.tgl || "-", i.ket, i.akad, Number(i.nominal)]);
+            });
+            aoa.push(["Total Pengeluaran", "", "", data.totalKeluar]);
+            aoa.push([]);
+
+            aoa.push(["SALDO AKHIR", "", "", "", data.saldoAkhir]);
+            aoa.push(["RINCIAN SALDO AKHIR"]);
+            aoa.push(["Infak Umum", "", "", "", data.infakUmumSisa]);
+            aoa.push(["Infak Yatim", "", "", "", data.infakYatimSisa]);
+
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan Keuangan");
+            XLSX.writeFile(wb, `LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.xlsx`);
+        }
+
+        // 2. EXPORT TO PDF (.PDF)
+        function exportToPDF() {
+            const yr = document.getElementById('selectYear').value;
+            const mo = document.getElementById('selectMonth').value;
+            const data = (masterDatabase[yr] && masterDatabase[yr][mo]) ? masterDatabase[yr][mo] : null;
+
+            if (!data) {
+                alert(`Tidak ada data laporan untuk periode ${mo} ${yr} untuk diunduh.`);
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(5, 150, 105);
+            doc.text("MASJID BAITUL JANNAH", 14, 15);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100);
+            doc.text(`Laporan Keuangan Kas Masjid - Periode ${mo} ${yr}`, 14, 21);
+
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(5, 150, 105);
+            doc.line(14, 24, 196, 24);
+
+            let currentY = 30;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(40);
+            doc.text("RINGKASAN KAS UTAMA", 14, currentY);
+
+            currentY += 4;
+            const summaryData = [
+                ["Saldo Awal", formatRp(data.saldoAwal)],
+                ["Total Pemasukan", formatRp(data.totalMasuk)],
+                ["Total Pengeluaran", formatRp(data.totalKeluar)],
+                ["Saldo Akhir", formatRp(data.saldoAkhir)],
+                ["Infak Umum (Sisa)", formatRp(data.infakUmumSisa)],
+                ["Infak Yatim (Sisa)", formatRp(data.infakYatimSisa)]
+            ];
+
+            doc.autoTable({
+                startY: currentY,
+                head: [["Keterangan Ringkasan", "Jumlah (Rp)"]],
+                body: summaryData,
+                theme: 'striped',
+                headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 9, cellPadding: 2 },
+                columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 8;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(5, 150, 105);
+            doc.text("TRANSAKSI PEMASUKAN", 14, currentY);
+
+            const pemasukanBody = (data.listPemasukan || []).map(i => [
+                i.tgl || "-",
+                i.ket,
+                i.akad,
+                formatRp(i.nominal)
+            ]);
+            pemasukanBody.push(["", "TOTAL PEMASUKAN", "", formatRp(data.totalMasuk)]);
+
+            doc.autoTable({
+                startY: currentY + 3,
+                head: [["Tanggal", "Keterangan", "Dana / Akad", "Nominal"]],
+                body: pemasukanBody,
+                theme: 'grid',
+                headStyles: { fillColor: [16, 185, 129], textColor: 255 },
+                styles: { fontSize: 8.5, cellPadding: 2 },
+                columnStyles: { 3: { halign: 'right' } }
+            });
+
+            currentY = doc.lastAutoTable.finalY + 8;
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(225, 29, 72);
+            doc.text("TRANSAKSI PENGELUARAN OPERASIONAL", 14, currentY);
+
+            const pengeluaranBody = (data.listPengeluaran || []).map(i => [
+                i.tgl || "-",
+                i.ket,
+                i.akad,
+                formatRp(i.nominal)
+            ]);
+            pengeluaranBody.push(["", "TOTAL PENGELUARAN", "", formatRp(data.totalKeluar)]);
+
+            doc.autoTable({
+                startY: currentY + 3,
+                head: [["Tanggal", "Keterangan Pengeluaran", "Dana / Akad", "Nominal"]],
+                body: pengeluaranBody,
+                theme: 'grid',
+                headStyles: { fillColor: [225, 29, 72], textColor: 255 },
+                styles: { fontSize: 8.5, cellPadding: 2 },
+                columnStyles: { 3: { halign: 'right' } }
+            });
+
+            doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
+        }
         // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
