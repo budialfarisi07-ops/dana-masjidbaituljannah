@@ -387,7 +387,7 @@
             }
         }
 
-        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS ---
+        // --- FETCH DATA DARI CLOUD (DILENGKAPI AUTO-SANITIZER TEKS JSON) ---
         async function fetchCloudData() {
             const statusEl = document.getElementById('periodStatus');
             if (statusEl) statusEl.innerText = "Memuat Cloud...";
@@ -398,11 +398,20 @@
                     redirect: 'follow'
                 });
                 
-                const json = await res.json();
+                const rawText = await res.text();
+                let parsedJson = {};
                 
-                if (json && Object.keys(json).length > 0) {
-                    masterDatabase = json;
-                    localStorage.setItem('masjid_db_master', JSON.stringify(json));
+                try {
+                    parsedJson = JSON.parse(rawText);
+                } catch (jsonErr) {
+                    // Jika teks dari A1 mengandung karakter escape yang kurang rapi, rapikan otomatis:
+                    const cleanText = rawText.replace(/\\"/g, '"').replace(/^"|"$/g, '');
+                    parsedJson = JSON.parse(cleanText);
+                }
+                
+                if (parsedJson && typeof parsedJson === 'object' && Object.keys(parsedJson).length > 0) {
+                    masterDatabase = parsedJson;
+                    localStorage.setItem('masjid_db_master', JSON.stringify(parsedJson));
                 } else {
                     masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
                 }
@@ -415,7 +424,7 @@
             }
         }
 
-        // --- SAVE DATA KE CLOUD GOOGLE SHEETS (PERBAIKAN TOTAL PAYLOAD & CORS) ---
+        // --- SAVE DATA KE CLOUD GOOGLE SHEETS ---
         async function syncToCloud(updatedDb) {
             document.getElementById('uploadStatus').innerText = "Menyimpan ke Cloud...";
             try {
