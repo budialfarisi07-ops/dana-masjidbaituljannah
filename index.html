@@ -6,11 +6,8 @@
     <title>Laporan Keuangan Masjid Baitul Jannah</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS (xlsx) untuk membaca & export file Excel -->
+    <!-- SheetJS (xlsx) untuk membaca file Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- jsPDF & AutoTable CDN untuk Export PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -73,9 +70,9 @@
             </div>
         </div>
 
-        <!-- FILTER DROPDOWN PERIODE & TOMBOL DOWNLOAD EXPORT -->
+        <!-- FILTER DROPDOWN PERIODE -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
-            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 <label class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1">
                     <i class="fa-solid fa-calendar-days text-emerald-600"></i> Periode Laporan:
                 </label>
@@ -100,20 +97,8 @@
                     <option value="Desember">Desember</option>
                 </select>
             </div>
-
-            <!-- MENU DROPDOWN DOWNLOAD LAPORAN -->
-            <div class="relative inline-block text-left w-full sm:w-auto">
-                <button onclick="toggleDownloadDropdown()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow transition">
-                    <i class="fa-solid fa-file-arrow-down"></i> Unduh Laporan <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                </button>
-                <div id="downloadDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1">
-                    <button onclick="exportToExcel()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-2">
-                        <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i> Download Format Excel (.xlsx)
-                    </button>
-                    <button onclick="exportToPDF()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-rose-50 hover:text-rose-700 font-semibold flex items-center gap-2 border-t border-slate-100">
-                        <i class="fa-solid fa-file-pdf text-rose-600 text-sm"></i> Download Format PDF (.pdf)
-                    </button>
-                </div>
+            <div class="text-xs text-slate-400">
+                Status: <span id="periodStatus" class="font-semibold text-emerald-600">Memuat Cloud...</span>
             </div>
         </div>
 
@@ -289,7 +274,7 @@
     </div>
 
     <script>
-        // ISI DENGAN URL WEB APP HASIL DEPLOYMENT APPS SCRIPT ANDA
+        // MASUKKAN URL WEB APP HASIL DEPLOYMENT APPS SCRIPT ANDA DI SINI
         const API_URL = "https://script.google.com/macros/s/AKfycbxJwvbDbwBOXZImC8X9jO3sVRyQ2elRTekJP2fRhY08MLIw7a_WbtiXfYbt_egQcWgp8g/exec";
 
         let masterDatabase = {};
@@ -306,6 +291,7 @@
             return localStorage.getItem('admin_pin_key') || '1234';
         }
 
+        // --- FUNGSI TANGGAL PRESISI TANGGAL 1 (BEBAS DARI OVERFLOW AKHIR BULAN) ---
         function setDefaultToPreviousMonth() {
             const now = new Date();
             now.setDate(1); 
@@ -329,7 +315,7 @@
             }
         }
 
-        // --- FETCH DATA CLOUD BEBAS CRASH (MULTI-DECODER ROBUST PARSER) ---
+        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS ---
         async function fetchCloudData() {
             const statusEl = document.getElementById('periodStatus');
             if (statusEl) statusEl.innerText = "Memuat Cloud...";
@@ -340,31 +326,11 @@
                     redirect: 'follow'
                 });
                 
-                const rawText = await res.text();
-                let parsedJson = null;
-
-                // Tiga tingkat dekoder otomatis jika data A1 ter-escape/berupa string ganda
-                try {
-                    parsedJson = JSON.parse(rawText);
-                    if (typeof parsedJson === 'string') {
-                        parsedJson = JSON.parse(parsedJson);
-                    }
-                } catch (e1) {
-                    try {
-                        let clean = rawText.trim();
-                        if (clean.startsWith('"') && clean.endsWith('"')) {
-                            clean = clean.substring(1, clean.length - 1);
-                        }
-                        clean = clean.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-                        parsedJson = JSON.parse(clean);
-                    } catch (e2) {
-                        console.error("Gagal dekode JSON mentah:", e2);
-                    }
-                }
-
-                if (parsedJson && typeof parsedJson === 'object' && Object.keys(parsedJson).length > 0) {
-                    masterDatabase = parsedJson;
-                    localStorage.setItem('masjid_db_master', JSON.stringify(parsedJson));
+                const json = await res.json();
+                
+                if (json && Object.keys(json).length > 0) {
+                    masterDatabase = json;
+                    localStorage.setItem('masjid_db_master', JSON.stringify(json));
                 } else {
                     masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
                 }
@@ -381,14 +347,13 @@
         async function syncToCloud(updatedDb) {
             document.getElementById('uploadStatus').innerText = "Menyimpan ke Cloud...";
             try {
-                const jsonString = JSON.stringify(updatedDb);
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: jsonString
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedDb)
                 });
-                localStorage.setItem('masjid_db_master', jsonString);
+                localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
                 document.getElementById('uploadStatus').innerText = "Tersimpan di Cloud Google Sheets";
             } catch (e) {
                 console.error("Gagal kirim ke Cloud:", e);
@@ -488,7 +453,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER PRESISI ---
+        // --- PARSER 100% PRESISI BERDASARKAN HEADER & POSISI MURNI ---
         function parseAndSaveExcel(rawRows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -496,6 +461,13 @@
             const monthsList = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
             monthsList.forEach(m => {
                 if(fileName.toLowerCase().includes(m.toLowerCase())) month = m;
+            });
+
+            // 1. Auto Trim Kolom Kosong di Kiri
+            let rows = rawRows.map(row => {
+                if (!row) return [];
+                let firstValidIdx = row.findIndex(cell => cell !== null && cell !== undefined && String(cell).trim() !== "");
+                return firstValidIdx > 0 ? row.slice(firstValidIdx) : row;
             });
 
             let saldoAwal = 0;
@@ -506,16 +478,25 @@
 
             let listPemasukan = [];
             let listPengeluaran = [];
-            let isPengeluaranSection = false;
-
-            let rows = rawRows;
+            let currentSection = "PEMASUKAN"; // Default awal
 
             rows.forEach(row => {
                 if (!row || !row.length) return;
 
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                if (rowStr.includes("saldo awal") && !rowStr.includes("pemasukan") && !rowStr.includes("pengeluaran")) {
+                // Deteksi Sekat Section
+                if (rowStr.includes("pemasukan") && !rowStr.includes("total") && !rowStr.includes("laporan")) {
+                    currentSection = "PEMASUKAN";
+                    return;
+                }
+                if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
+                    currentSection = "PENGELUARAN";
+                    return;
+                }
+
+                // Deteksi Ringkasan Utama
+                if (rowStr.includes("saldo awal")) {
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) saldoAwal = cell; });
                 }
                 if (rowStr.includes("total pemasukan")) {
@@ -531,51 +512,48 @@
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) infakYatimSisa = cell; });
                 }
 
-                if (rowStr.includes("pemasukan") && !rowStr.includes("total")) {
-                    isPengeluaranSection = false;
-                    return;
-                }
-                if (rowStr.includes("pengeluaran") && !rowStr.includes("total")) {
-                    isPengeluaranSection = true;
-                    return;
-                }
+                // Abaikan Baris Header & Total
+                if (rowStr.includes("tanggal") && (rowStr.includes("keterangan") || rowStr.includes("uraian"))) return;
+                if (rowStr.includes("total pemasukan") || rowStr.includes("total pengeluaran") || rowStr.includes("rincian saldo")) return;
 
+                // Ekstrak Baris Transaksi Berdasarkan Struktur Kolom Baku (0: Tgl, 1: Keterangan, 2: Akad, 3: Nominal)
                 let tgl = "", ket = "", akad = "", nominal = 0;
 
-                let numCellIdx = -1;
-                row.forEach((cell, idx) => {
-                    if (typeof cell === 'number' && Math.abs(cell) > 100) {
-                        nominal = cell;
-                        numCellIdx = idx;
+                // Cari Nilai Nominal (Angka > 100 atau Minus)
+                let nominalIdx = -1;
+                for (let i = row.length - 1; i >= 0; i--) {
+                    if (typeof row[i] === 'number' && Math.abs(row[i]) > 100) {
+                        nominal = row[i];
+                        nominalIdx = i;
+                        break;
                     }
-                });
+                }
 
-                if (nominal !== 0 && numCellIdx !== -1) {
-                    let textCells = [];
-                    for (let i = 0; i < numCellIdx; i++) {
-                        let val = row[i];
-                        if (val !== null && val !== undefined && String(val).trim() !== "") {
-                            textCells.push(String(val).trim());
+                if (nominalIdx !== -1) {
+                    // Berjalan ke kiri dari nominal untuk mengambil Akad, Keterangan, Tanggal
+                    for (let i = 0; i < nominalIdx; i++) {
+                        let cell = row[i];
+                        if (cell === null || cell === undefined) continue;
+
+                        let cStr = String(cell).trim();
+                        let cLower = cStr.toLowerCase();
+
+                        // Deteksi Tanggal
+                        let isDateStr = cLower.includes("2024") || cLower.includes("2025") || cLower.includes("2026") || cLower.includes("2027");
+                        if ((typeof cell === 'number' && cell >= 1 && cell <= 31) || isDateStr) {
+                            if (!tgl) tgl = typeof cell === 'number' ? `${cell} ${month.substring(0,3)}` : cStr.replace('2026-', '').replace('2025-', '').replace('2027-', '');
+                        }
+                        // Deteksi Akad (Infak Umum, Infak Yatim, Infak Muqayyad, dll.)
+                        else if (cLower.startsWith("infak umum") || cLower.startsWith("infak yatim") || cLower.startsWith("infak muqayyad")) {
+                            akad = cStr;
+                        }
+                        // Semua Teks Lainnya Adalah KETERANGAN (Wajib)
+                        else if (cStr.length > 2 && !ket && !monthsList.some(m => m.toLowerCase() === cLower) && !cLower.includes("saldo awal")) {
+                            ket = cStr;
                         }
                     }
 
-                    if (textCells.length >= 1) {
-                        let firstStr = textCells[0];
-                        let isDate = firstStr.includes("2024") || firstStr.includes("2025") || firstStr.includes("2026") || firstStr.includes("2027") || (!isNaN(firstStr) && Number(firstStr) <= 31);
-                        
-                        if (isDate) {
-                            tgl = firstStr.replace('2026-', '').replace('2025-', '').replace('2027-', '');
-                            textCells.shift();
-                        }
-
-                        if (textCells.length === 1) {
-                            ket = textCells[0];
-                        } else if (textCells.length >= 2) {
-                            ket = textCells[0];
-                            akad = textCells[1];
-                        }
-                    }
-
+                    // Isi Akad Default jika tidak spesifik
                     if (!akad) {
                         if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
                             akad = "Infak Yatim";
@@ -584,8 +562,9 @@
                         }
                     }
 
-                    if (ket && !ket.toLowerCase().includes("total") && !ket.toLowerCase().includes("saldo awal") && !ket.toLowerCase().includes("rincian")) {
-                        if (!isPengeluaranSection) {
+                    // Masukkan ke List yang Tepat
+                    if (ket && nominal && !ket.toLowerCase().includes("saldo awal")) {
+                        if (currentSection === "PEMASUKAN") {
                             listPemasukan.push({ tgl: tgl || "-", ket, akad, nominal });
                         } else {
                             listPengeluaran.push({ tgl: tgl || "-", ket, akad, nominal });
@@ -799,201 +778,7 @@
             }
         }
 
-        // --- FITUR DOWNLOAD DROPDOWN (EXCEL & PDF) ---
-        function toggleDownloadDropdown() {
-            const dropdown = document.getElementById('downloadDropdownMenu');
-            dropdown.classList.toggle('hidden');
-        }
-
-        window.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('downloadDropdownMenu');
-            const button = e.target.closest('button');
-            if (!button || !button.getAttribute('onclick') || !button.getAttribute('onclick').includes('toggleDownloadDropdown')) {
-                if (dropdown && !dropdown.classList.contains('hidden')) {
-                    dropdown.classList.add('hidden');
-                }
-            }
-        });
-
-        // 1. EXPORT TO EXCEL (.XLSX)
-        function exportToExcel() {
-            const yr = document.getElementById('selectYear').value;
-            const mo = document.getElementById('selectMonth').value;
-            const data = (masterDatabase[yr] && masterDatabase[yr][mo]) ? masterDatabase[yr][mo] : null;
-
-            if (!data) {
-                alert(`Tidak ada data laporan untuk periode ${mo} ${yr} untuk diunduh.`);
-                return;
-            }
-
-            let aoa = [
-                ["LAPORAN KEUANGAN MASJID BAITUL JANNAH"],
-                [`Periode: ${mo} ${yr}`],
-                [],
-                ["SALDO AWAL", "", "", "", data.saldoAwal],
-                ["PEMASUKAN"],
-                ["Tanggal", "Keterangan", "Dana/Akad", "Nominal"]
-            ];
-
-            data.listPemasukan.forEach(i => {
-                aoa.push([i.tgl || "-", i.ket, i.akad, Number(i.nominal)]);
-            });
-            aoa.push(["Total Pemasukan", "", "", data.totalMasuk]);
-            aoa.push([]);
-
-            aoa.push(["PENGELUARAN"]);
-            aoa.push(["Tanggal", "Keterangan", "Dana/Akad", "Nominal"]);
-            data.listPengeluaran.forEach(i => {
-                aoa.push([i.tgl || "-", i.ket, i.akad, Number(i.nominal)]);
-            });
-            aoa.push(["Total Pengeluaran", "", "", data.totalKeluar]);
-            aoa.push([]);
-
-            aoa.push(["SALDO AKHIR", "", "", "", data.saldoAkhir]);
-            aoa.push(["RINCIAN SALDO AKHIR"]);
-            aoa.push(["Infak Umum", "", "", "", data.infakUmumSisa]);
-            aoa.push(["Infak Yatim", "", "", "", data.infakYatimSisa]);
-            aoa.push([]);
-            aoa.push(["", "", "", `Semarang, 31 ${mo} ${yr}`]);
-            aoa.push(["Ketua/Wakil Ketua", "", "", "Bendahara"]);
-            aoa.push([]);
-            aoa.push([]);
-            aoa.push(["( Fadlan Zaenuri, S.H )", "", "", "( Aditya Budi Santoso, M.Ag )"]);
-
-            const ws = XLSX.utils.aoa_to_sheet(aoa);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Laporan Keuangan");
-            XLSX.writeFile(wb, `LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.xlsx`);
-        }
-
-        // 2. EXPORT TO PDF (.PDF)
-        function exportToPDF() {
-            const yr = document.getElementById('selectYear').value;
-            const mo = document.getElementById('selectMonth').value;
-            const data = (masterDatabase[yr] && masterDatabase[yr][mo]) ? masterDatabase[yr][mo] : null;
-
-            if (!data) {
-                alert(`Tidak ada data laporan untuk periode ${mo} ${yr} untuk diunduh.`);
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            doc.setFontSize(16);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(5, 150, 105);
-            doc.text("MASJID BAITUL JANNAH", 14, 15);
-
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(100);
-            doc.text(`Laporan Keuangan Kas Masjid - Periode ${mo} ${yr}`, 14, 21);
-
-            doc.setLineWidth(0.5);
-            doc.setDrawColor(5, 150, 105);
-            doc.line(14, 24, 196, 24);
-
-            let currentY = 30;
-
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(40);
-            doc.text("RINGKASAN KAS UTAMA", 14, currentY);
-
-            currentY += 4;
-            const summaryData = [
-                ["Saldo Awal", formatRp(data.saldoAwal)],
-                ["Total Pemasukan", formatRp(data.totalMasuk)],
-                ["Total Pengeluaran", formatRp(data.totalKeluar)],
-                ["Saldo Akhir", formatRp(data.saldoAkhir)],
-                ["Infak Umum (Sisa)", formatRp(data.infakUmumSisa)],
-                ["Infak Yatim (Sisa)", formatRp(data.infakYatimSisa)]
-            ];
-
-            doc.autoTable({
-                startY: currentY,
-                head: [["Keterangan Ringkasan", "Jumlah (Rp)"]],
-                body: summaryData,
-                theme: 'striped',
-                headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
-                styles: { fontSize: 9, cellPadding: 2 },
-                columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
-            });
-
-            currentY = doc.lastAutoTable.finalY + 8;
-
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(5, 150, 105);
-            doc.text("TRANSAKSI PEMASUKAN", 14, currentY);
-
-            const pemasukanBody = data.listPemasukan.map(i => [
-                i.tgl || "-",
-                i.ket,
-                i.akad,
-                formatRp(i.nominal)
-            ]);
-            pemasukanBody.push(["", "TOTAL PEMASUKAN", "", formatRp(data.totalMasuk)]);
-
-            doc.autoTable({
-                startY: currentY + 3,
-                head: [["Tanggal", "Keterangan", "Dana / Akad", "Nominal"]],
-                body: pemasukanBody,
-                theme: 'grid',
-                headStyles: { fillColor: [16, 185, 129], textColor: 255 },
-                styles: { fontSize: 8.5, cellPadding: 2 },
-                columnStyles: { 3: { halign: 'right' } }
-            });
-
-            currentY = doc.lastAutoTable.finalY + 8;
-
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(225, 29, 72);
-            doc.text("TRANSAKSI PENGELUARAN OPERASIONAL", 14, currentY);
-
-            const pengeluaranBody = data.listPengeluaran.map(i => [
-                i.tgl || "-",
-                i.ket,
-                i.akad,
-                formatRp(i.nominal)
-            ]);
-            pengeluaranBody.push(["", "TOTAL PENGELUARAN", "", formatRp(data.totalKeluar)]);
-
-            doc.autoTable({
-                startY: currentY + 3,
-                head: [["Tanggal", "Keterangan Pengeluaran", "Dana / Akad", "Nominal"]],
-                body: pengeluaranBody,
-                theme: 'grid',
-                headStyles: { fillColor: [225, 29, 72], textColor: 255 },
-                styles: { fontSize: 8.5, cellPadding: 2 },
-                columnStyles: { 3: { halign: 'right' } }
-            });
-
-            currentY = doc.lastAutoTable.finalY + 12;
-
-            if (currentY > 240) {
-                doc.addPage();
-                currentY = 20;
-            }
-
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(60);
-
-            doc.text(`Semarang, ${mo} ${yr}`, 140, currentY);
-            doc.text("Ketua Takmir,", 14, currentY + 6);
-            doc.text("Bendahara,", 140, currentY + 6);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("( Fadlan Zaenuri, S.H )", 14, currentY + 24);
-            doc.text("( Aditya Budi Santoso, M.Ag )", 140, currentY + 24);
-
-            doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
-        }
-
-        // --- INISIALISASI UTAMA ---
+        // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
             fetchCloudData();
