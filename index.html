@@ -562,11 +562,11 @@
                         if ((typeof cell === 'number' && cell >= 1 && cell <= 31) || isDateStr) {
                             if (!tgl) tgl = typeof cell === 'number' ? `${cell} ${month.substring(0,3)}` : cStr.replace('2026-', '').replace('2025-', '').replace('2027-', '');
                         }
-                        // Deteksi Akad (Infak Umum, Infak Yatim, Infak Muqayyad, dll.)
-                        else if (cLower.startsWith("infak umum") || cLower.startsWith("infak yatim") || cLower.startsWith("infak muqayyad")) {
+                        // Deteksi Akad Presisi (Hanya teks akad murni tanpa uraian panjang)
+                        else if ((cLower === "infak umum" || cLower === "infak yatim" || cLower === "infak muqayyad" || cLower === "infak umum & yatim") && !akad) {
                             akad = cStr;
                         }
-                        // Semua Teks Lainnya Adalah KETERANGAN (Wajib)
+                        // Semua Teks Keterangan / Uraian Transaksi
                         else if (cStr.length > 2 && !ket && !monthsList.some(m => m.toLowerCase() === cLower) && !cLower.includes("saldo awal")) {
                             ket = cStr;
                         }
