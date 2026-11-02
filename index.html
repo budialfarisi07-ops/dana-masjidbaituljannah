@@ -530,9 +530,10 @@
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) infakYatimSisa = cell; });
                 }
 
-                // Abaikan Baris Header & Total
+                // Abaikan Baris Header, Total, & Baris Rincian Saldo
                 if (rowStr.includes("tanggal") && (rowStr.includes("keterangan") || rowStr.includes("uraian"))) return;
                 if (rowStr.includes("total pemasukan") || rowStr.includes("total pengeluaran") || rowStr.includes("rincian saldo")) return;
+                if (rowStr.trim() === "total" || rowStr.startsWith("total ")) return;
 
                 // Ekstrak Baris Transaksi Berdasarkan Struktur Kolom Baku (0: Tgl, 1: Keterangan, 2: Akad, 3: Nominal)
                 let tgl = "", ket = "", akad = "", nominal = 0;
