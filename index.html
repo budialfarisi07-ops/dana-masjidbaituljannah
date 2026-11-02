@@ -857,7 +857,7 @@
             XLSX.writeFile(wb, `LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.xlsx`);
         }
 
-        // 2. EXPORT TO PDF (.PDF)
+       // 2. EXPORT TO PDF (.PDF)
         function exportToPDF() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -871,6 +871,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
+            // Header Dokumen
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(5, 150, 105);
@@ -887,33 +888,53 @@
 
             let currentY = 30;
 
+            // Judul Bagian Ringkasan
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(40);
-            doc.text("RINGKASAN KAS UTAMA", 14, currentY);
+            doc.text("RINGKASAN KAS UTAMA & RINCIAN DANA", 14, currentY);
 
             currentY += 4;
-            const summaryData = [
+
+            // TABEL 1: RINGKASAN KAS UTAMA (Hanya Saldo Awal, Pemasukan, Pengeluaran, & Saldo Akhir)
+            const summaryMain = [
                 ["Saldo Awal", formatRp(data.saldoAwal)],
                 ["Total Pemasukan", formatRp(data.totalMasuk)],
                 ["Total Pengeluaran", formatRp(data.totalKeluar)],
-                ["Saldo Akhir", formatRp(data.saldoAkhir)],
-                ["Infak Umum (Sisa)", formatRp(data.infakUmumSisa)],
-                ["Infak Yatim (Sisa)", formatRp(data.infakYatimSisa)]
+                ["TOTAL SALDO AKHIR", formatRp(data.saldoAkhir)]
             ];
 
             doc.autoTable({
                 startY: currentY,
-                head: [["Keterangan Ringkasan", "Jumlah (Rp)"]],
-                body: summaryData,
+                margin: { left: 14, right: 105 }, // Memakai separuh lebar halaman kiri
+                head: [["Keterangan Kas Utama", "Jumlah (Rp)"]],
+                body: summaryMain,
                 theme: 'striped',
                 headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
-                styles: { fontSize: 9, cellPadding: 2 },
+                styles: { fontSize: 8.5, cellPadding: 2 },
                 columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
             });
 
-            currentY = doc.lastAutoTable.finalY + 8;
+            // TABEL 2: RINCIAN DANA / AKAD (Diletakkan bersandingan di sebelah kanan)
+            const rincianAkadData = [
+                ["Sisa Infak Umum", formatRp(data.infakUmumSisa)],
+                ["Sisa Infak Yatim", formatRp(data.infakYatimSisa)]
+            ];
 
+            doc.autoTable({
+                startY: currentY,
+                margin: { left: 108, right: 14 }, // Diletakkan di sebelah kanan
+                head: [["Komposisi Saldo per Akad", "Jumlah (Rp)"]],
+                body: rincianAkadData,
+                theme: 'striped',
+                headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' }, // Warna ungu membedakan dari saldo utama
+                styles: { fontSize: 8.5, cellPadding: 2 },
+                columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
+            });
+
+            currentY = Math.max(doc.lastAutoTable.finalY, currentY + 35) + 8;
+
+            // TABEL TRANSAKSI PEMASUKAN
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(5, 150, 105);
@@ -934,11 +955,12 @@
                 theme: 'grid',
                 headStyles: { fillColor: [16, 185, 129], textColor: 255 },
                 styles: { fontSize: 8.5, cellPadding: 2 },
-                columnStyles: { 3: { halign: 'right' } }
+                columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } }
             });
 
             currentY = doc.lastAutoTable.finalY + 8;
 
+            // TABEL TRANSAKSI PENGELUARAN
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(225, 29, 72);
@@ -959,7 +981,7 @@
                 theme: 'grid',
                 headStyles: { fillColor: [225, 29, 72], textColor: 255 },
                 styles: { fontSize: 8.5, cellPadding: 2 },
-                columnStyles: { 3: { halign: 'right' } }
+                columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } }
             });
 
             doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
