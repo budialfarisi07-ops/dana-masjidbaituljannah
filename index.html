@@ -294,9 +294,6 @@
         // --- FUNGSI TANGGAL PRESISI TANGGAL 1 (BEBAS DARI OVERFLOW AKHIR BULAN) ---
         function setDefaultToPreviousMonth() {
             const now = new Date();
-            
-            // PENTING: Kunci ke tanggal 1 terlebih dahulu sebelum mengurangi bulan!
-            // Mencegah bug overflow "31 September" -> "1 Oktober" saat dieksekusi tanggal 31
             now.setDate(1); 
             now.setMonth(now.getMonth() - 1);
 
@@ -456,14 +453,22 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER PRESISI LOGIKA STABIL ---
-        function parseAndSaveExcel(rows, fileName) {
+        // --- PARSER TAHAN KOLOM KOSONG (AUTO-TRIM BLANK LEADING COLUMNS) ---
+        function parseAndSaveExcel(rawRows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
 
             const monthsList = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
             monthsList.forEach(m => {
                 if(fileName.toLowerCase().includes(m.toLowerCase())) month = m;
+            });
+
+            // 0. Auto-Trim Kolom Kosong di Sebelah Kiri
+            let rows = rawRows.map(row => {
+                if (!row) return [];
+                // Bersihkan sel kosong paling kiri jika ada offset/shift kolom
+                let firstValidIdx = row.findIndex(cell => cell !== null && cell !== undefined && String(cell).trim() !== "");
+                return firstValidIdx > 0 ? row.slice(firstValidIdx) : row;
             });
 
             let saldoAwal = 0;
@@ -518,12 +523,19 @@
                         let cTrim = cell.trim();
                         let cLower = cTrim.toLowerCase();
 
-                        if (cLower.includes("infak") && cTrim.length < 30) {
+                        // Cek apakah string ini adalah Tanggal lengkap (misal 2026-10-02)
+                        let isDateStr = cLower.includes("2024") || cLower.includes("2025") || cLower.includes("2026") || cLower.includes("2027");
+
+                        if (isDateStr && !tgl) {
+                            tgl = cTrim.replace('2026-', '').replace('2025-', '').replace('2027-', '');
+                        }
+                        else if (cLower.includes("infak") && cTrim.length < 30) {
                             akad = cTrim;
                         } 
                         else if (
                             cTrim.length > 2 && 
                             !ket && 
+                            !isDateStr &&
                             !monthsList.some(m => m.toLowerCase() === cLower) &&
                             !cLower.includes("pemasukan") && 
                             !cLower.includes("pengeluaran") && 
@@ -759,9 +771,7 @@
 
         // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
         document.addEventListener("DOMContentLoaded", () => {
-            // Step 1: Set dropdown ke bulan sebelumnya secara presisi (September)
             setDefaultToPreviousMonth();
-            // Step 2: Baru load data cloud
             fetchCloudData();
         });
     </script>
