@@ -415,17 +415,18 @@
             }
         }
 
-        // --- SAVE DATA KE CLOUD GOOGLE SHEETS ---
+        // --- SAVE DATA KE CLOUD GOOGLE SHEETS (PERBAIKAN TOTAL PAYLOAD & CORS) ---
         async function syncToCloud(updatedDb) {
             document.getElementById('uploadStatus').innerText = "Menyimpan ke Cloud...";
             try {
+                const jsonString = JSON.stringify(updatedDb);
                 await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedDb)
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: jsonString
                 });
-                localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
+                localStorage.setItem('masjid_db_master', jsonString);
                 document.getElementById('uploadStatus').innerText = "Tersimpan di Cloud Google Sheets";
             } catch (e) {
                 console.error("Gagal kirim ke Cloud:", e);
@@ -545,7 +546,7 @@
             let listPengeluaran = [];
             let isPengeluaranSection = false;
 
-            rows = rawRows;
+            let rows = rawRows;
 
             rows.forEach(row => {
                 if (!row || !row.length) return;
@@ -902,7 +903,6 @@
             dropdown.classList.toggle('hidden');
         }
 
-        // Tutup dropdown jika mengklik di luar area tombol
         window.addEventListener('click', function(e) {
             const dropdown = document.getElementById('downloadDropdownMenu');
             const button = e.target.closest('button');
@@ -933,14 +933,12 @@
                 ["Tanggal", "Keterangan", "Dana/Akad", "Nominal"]
             ];
 
-            // Tambah Pemasukan
             data.listPemasukan.forEach(i => {
                 aoa.push([i.tgl || "-", i.ket, i.akad, Number(i.nominal)]);
             });
             aoa.push(["Total Pemasukan", "", "", data.totalMasuk]);
             aoa.push([]);
 
-            // Tambah Pengeluaran
             aoa.push(["PENGELUARAN"]);
             aoa.push(["Tanggal", "Keterangan", "Dana/Akad", "Nominal"]);
             data.listPengeluaran.forEach(i => {
@@ -949,7 +947,6 @@
             aoa.push(["Total Pengeluaran", "", "", data.totalKeluar]);
             aoa.push([]);
 
-            // Tambah Saldo Akhir & Rincian
             aoa.push(["SALDO AKHIR", "", "", "", data.saldoAkhir]);
             aoa.push(["RINCIAN SALDO AKHIR"]);
             aoa.push(["Infak Umum", "", "", "", data.infakUmumSisa]);
@@ -981,7 +978,6 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Header Judul
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(5, 150, 105);
@@ -998,7 +994,6 @@
 
             let currentY = 30;
 
-            // Box Ringkasan Saldo Utama
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(40);
@@ -1026,7 +1021,6 @@
 
             currentY = doc.lastAutoTable.finalY + 8;
 
-            // Tabel Pemasukan
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(5, 150, 105);
@@ -1052,7 +1046,6 @@
 
             currentY = doc.lastAutoTable.finalY + 8;
 
-            // Tabel Pengeluaran
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(225, 29, 72);
@@ -1078,13 +1071,11 @@
 
             currentY = doc.lastAutoTable.finalY + 12;
 
-            // Jika halaman tidak cukup untuk tanda tangan, buat halaman baru
             if (currentY > 240) {
                 doc.addPage();
                 currentY = 20;
             }
 
-            // Area Tanda Tangan Pengurus
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
             doc.setTextColor(60);
