@@ -145,15 +145,12 @@
                             <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
                             <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
                         </label>
-                        <!-- 📌 FITUR BARU: Tombol Hapus Semua Data Pekan Ini -->
-                        <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
-                        </button>
                     </div>
                     <button onclick="exportJumatPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow flex items-center gap-1.5 ml-auto">
                         <i class="fa-solid fa-file-pdf"></i> Unduh PDF Laporan Jumat
                     </button>
                 </div>
+            </div>
 
             <!-- Tabel Detail Transaksi Pekan Ini -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
@@ -1436,20 +1433,7 @@
             alert("Transaksi Jumat Berhasil Disimpan!");
         }
 
-        // 1. Fungsi Hapus Langsung Semua Data Pekan Ini
-        function resetJumatPeriod() {
-            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
-            if (confirm(`Apakah Anda yakin ingin MENGHAPUS SEMUA DATA transaksi pada periode ${rangeInfo.label}?`)) {
-                if (masterDatabase.jumat && masterDatabase.jumat[rangeInfo.key]) {
-                    delete masterDatabase.jumat[rangeInfo.key];
-                    syncToCloud(masterDatabase);
-                }
-                renderJumatPeriod();
-                alert(`Data pekanan ${rangeInfo.label} berhasil dikosongkan!`);
-            }
-        }
-
-        // 2. Processing File Excel khusus Pekan Jumat (Dukungan Nominal Minus & Manual Binding)
+        // 4. Processing File Excel khusus ke PERIODE PEKAN YANG SEDANG DIPILIH (MANUAL BINDING)
         function processJumatFile(file) {
             if (!file) return;
 
@@ -1467,36 +1451,28 @@
                     if (!row || !row.length) return;
                     let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                    // Deteksi Saldo Awal (Mendukung positif & negatif)
                     if (rowStr.includes("saldo awal")) {
                         row.forEach(cell => {
-                            if (typeof cell === 'number' && !isNaN(cell) && cell !== 0) saldoAwal = cell;
+                            if (typeof cell === 'number' && cell > 0) saldoAwal = cell;
                         });
                     }
 
-                    // Abaikan Baris Judul & Total
                     if (rowStr.includes("masjid") || rowStr.includes("pekan jumat") || rowStr.includes("ringkasan") || rowStr.includes("saldo awal") || rowStr.includes("total") || rowStr.includes("takmir") || rowStr.includes("bendahara")) {
                         return;
                     }
                     if (rowStr.includes("no") && rowStr.includes("tanggal")) return;
 
-                    let tglStr = "", ket = "", masuk = null, keluar = null;
+                    let tglStr = "", ket = "", masuk = 0, keluar = 0;
 
-                    if (row.length > 1 && row[1] !== null && row[1] !== undefined) tglStr = String(row[1]).trim();
-                    if (row.length > 2 && row[2] !== null && row[2] !== undefined) ket = String(row[2]).trim();
+                    if (row.length > 1 && row[1] !== null) tglStr = String(row[1]).trim();
+                    if (row.length > 2 && row[2] !== null) ket = String(row[2]).trim();
                     if (row.length > 3 && typeof row[3] === 'number') masuk = row[3];
                     if (row.length > 4 && typeof row[4] === 'number') keluar = row[4];
 
-                    // Pembacaan Nominal (Mendukung Nominal Minus / Negatif)
-                    if (ket && (masuk !== null || keluar !== null)) {
+                    if (ket && (masuk > 0 || keluar > 0)) {
                         let formattedTgl = tglStr || "-";
-                        
-                        if (masuk !== null && masuk !== 0) {
-                            listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'masuk', nominal: masuk });
-                        }
-                        if (keluar !== null && keluar !== 0) {
-                            listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'keluar', nominal: keluar });
-                        }
+                        if (masuk > 0) listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'masuk', nominal: masuk });
+                        if (keluar > 0) listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'keluar', nominal: keluar });
                     }
                 });
 
@@ -1521,6 +1497,7 @@
                 processJumatFile(event.target.files[0]);
             }
         }
+
         // 5. Inisialisasi Event Drag & Drop Jumat
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
