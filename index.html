@@ -187,8 +187,9 @@
                 </div>
             </div>
         </div>
+      <!-- ✅ PERBAIKAN: TAMBAH ID KONTAINER FILTER -->
         <!-- FILTER DROPDOWN PERIODE -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <div id="filterPeriodContainer" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
             <div class="flex items-center gap-2 w-full sm:w-auto">
                 <label class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1">
                     <i class="fa-solid fa-calendar-days text-emerald-600"></i> Periode Laporan:
@@ -1278,18 +1279,24 @@
             renderJumatPeriod();
         }
 
+        // ✅ FUNGSI NAVIGASI TAB MODUL LAPORAN (SEMBUNYIKAN FILTER DI MODE JUMAT)
         function switchMode(mode) {
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
             const secJ = document.getElementById('sectionJumat');
+            const filterContainer = document.getElementById('filterPeriodContainer');
 
             if (mode === 'jumat') {
                 btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.remove('hidden');
                 
+                // Sembunyikan panel admin bulanan & filter dropdown periode bulanan
                 document.getElementById('adminPanel').classList.add('hidden');
+                if (filterContainer) filterContainer.classList.add('hidden');
+                
+                // Sembunyikan semua elemen dashboard laporan bulanan
                 document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
                 
                 renderJumatPeriod();
@@ -1299,7 +1306,12 @@
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.add('hidden');
                 
+                // Tampilkan kembali filter dropdown periode bulanan
+                if (filterContainer) filterContainer.classList.remove('hidden');
+                
+                // Tampilkan kembali elemen dashboard laporan bulanan
                 document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
+                
                 checkAdminSession();
                 renderCurrentPeriod();
             }
