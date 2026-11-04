@@ -1212,7 +1212,7 @@
         let currentMode = "bulanan"; 
         let currentJumatWeekOffset = 0;
 
-        function switchMode(mode) {
+      function switchMode(mode) {
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
@@ -1223,6 +1223,8 @@
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.remove('hidden');
                 
+                // Menyembunyikan panel upload bulanan & section bulanan saat mode jumat
+                document.getElementById('adminPanel').classList.add('hidden');
                 document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
                 renderJumatPeriod();
             } else {
@@ -1230,14 +1232,32 @@
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.add('hidden');
                 
+                // Menampilkan kembali section bulanan & panel admin jika sedang logged in
                 document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
+                checkAdminSession();
                 renderCurrentPeriod();
             }
         }
 
         // Fungsi Menentukan Pekan Jumat (Jumat s/d Kamis) dari Tanggal Apapun
-        function getJumatRangeKeyFromDate(dObj) {
-            const date = new Date(dObj);
+function getJumatRangeKeyFromDate(dInput) {
+            let date = new Date();
+            if (dInput) {
+                if (typeof dInput === 'string') {
+                    let cleanStr = dInput.split('T')[0];
+                    let parts = cleanStr.split('-');
+                    if (parts.length === 3) {
+                        date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    } else {
+                        date = new Date(dInput);
+                    }
+                } else if (dInput instanceof Date) {
+                    date = new Date(dInput.getTime());
+                }
+            }
+
+            if (isNaN(date.getTime())) date = new Date();
+
             const day = date.getDay(); // 0: Mingu, 5: Jumat
             const diffToJumat = (day >= 5) ? (day - 5) : (day + 2);
             
@@ -1255,17 +1275,6 @@
             return { key, label, jumatObj: jumat, kamisObj: kamis };
         }
 
-        function getJumatRangeKey(offset = 0) {
-            const now = new Date();
-            now.setDate(now.getDate() + (offset * 7));
-            return getJumatRangeKeyFromDate(now);
-        }
-
-        function changeJumatWeek(dir) {
-            currentJumatWeekOffset += dir;
-            renderJumatPeriod();
-        }
-
         function renderJumatPeriod() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             document.getElementById('txtJumatRange').innerText = rangeInfo.label;
@@ -1279,7 +1288,7 @@
 
             if (!masterDatabase.jumat) masterDatabase.jumat = {};
             const weekData = masterDatabase.jumat[rangeInfo.key] || {
-                saldoAwal: 4329440,
+                saldoAwal: 0,
                 listTx: []
             };
 
@@ -1291,12 +1300,13 @@
                 else totalKeluar += Number(tx.nominal);
             });
 
-            let saldoAkhir = Number(weekData.saldoAwal) + totalMasuk - totalKeluar;
+            let saldoAwalPekan = Number(weekData.saldoAwal) || 0;
+            let saldoAkhirPekan = saldoAwalPekan + totalMasuk - totalKeluar;
 
-            document.getElementById('jumatSaldoAwal').innerText = formatRp(weekData.saldoAwal);
+            document.getElementById('jumatSaldoAwal').innerText = formatRp(saldoAwalPekan);
             document.getElementById('jumatPemasukan').innerText = formatRp(totalMasuk);
             document.getElementById('jumatPengeluaran').innerText = formatRp(totalKeluar);
-            document.getElementById('jumatSaldoAkhir').innerText = formatRp(saldoAkhir);
+            document.getElementById('jumatSaldoAkhir').innerText = formatRp(saldoAkhirPekan);
 
             document.getElementById('jumatTotalMasuk').innerText = formatRp(totalMasuk);
             document.getElementById('jumatTotalKeluar').innerText = formatRp(totalKeluar);
@@ -1426,7 +1436,7 @@
         }
 
         // --- UPLOAD EXCEL LAPORAN PEKAN JUMAT ---
-        function handleJumatExcelUpload(event) {
+function handleJumatExcelUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -1439,42 +1449,55 @@
 
                 let saldoAwal = 0;
                 let listTx = [];
-                let sampleDate = null;
+                let sampleDateStr = "";
 
-                rows.forEach(row => {
+                rows.forEach((row, r_idx) => {
                     if (!row || !row.length) return;
                     let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
                     // 1. Ekstrak Saldo Awal Pekan
                     if (rowStr.includes("saldo awal")) {
-                        row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) saldoAwal = cell; });
+                        row.forEach(cell => {
+                            if (typeof cell === 'number' && cell > 0) saldoAwal = cell;
+                        });
+                        if (saldoAwal === 0 && r_idx + 1 < rows.length) {
+                            (rows[r_idx + 1] || []).forEach(cell => {
+                                if (typeof cell === 'number' && cell > 0 && saldoAwal === 0) saldoAwal = cell;
+                            });
+                        }
                     }
 
-                    // 2. Ekstrak Baris Transaksi (No, Tanggal, Keterangan, Masuk, Keluar)
+                    // 2. Abaikan Baris Judul & Total
+                    if (rowStr.includes("masjid") || rowStr.includes("pekan jumat") || rowStr.includes("ringkasan") || rowStr.includes("saldo awal") || rowStr.includes("total pemasukan") || rowStr.includes("total pengeluaran") || rowStr.includes("total pekan") || rowStr.includes("semarang") || rowStr.includes("takmir") || rowStr.includes("bendahara")) {
+                        return;
+                    }
                     if (rowStr.includes("no") && rowStr.includes("tanggal")) return;
-                    if (rowStr.includes("total pekan") || rowStr.includes("ringkasan")) return;
 
+                    // 3. Ekstrak Baris Transaksi
                     let tglStr = "", ket = "", masuk = 0, keluar = 0;
 
-                    row.forEach(cell => {
-                        if (!cell) return;
-                        let cStr = String(cell).trim();
+                    if (row.length > 1 && row[1] !== null && row[1] !== undefined) {
+                        let cStr = String(row[1]).trim();
                         if (cStr.includes("2024") || cStr.includes("2025") || cStr.includes("2026") || cStr.includes("2027")) {
                             tglStr = cStr;
-                            if (!sampleDate) sampleDate = new Date(cStr);
-                        } else if (typeof cell === 'number' && Math.abs(cell) > 100) {
-                            if (!masuk && row.indexOf(cell) === 3) masuk = cell;
-                            else if (!keluar) keluar = cell;
-                        } else if (cStr.length > 2 && !ket && !cStr.toLowerCase().includes("semarang") && !cStr.toLowerCase().includes("takmir")) {
-                            ket = cStr;
+                            if (!sampleDateStr) sampleDateStr = cStr;
                         }
-                    });
+                    }
 
-                    if (ket && (masuk || keluar)) {
-                        let txDate = sampleDate || new Date();
+                    if (row.length > 2 && row[2] !== null && row[2] !== undefined) {
+                        ket = String(row[2]).trim();
+                    }
+
+                    if (row.length > 3 && typeof row[3] === 'number') masuk = row[3];
+                    if (row.length > 4 && typeof row[4] === 'number') keluar = row[4];
+
+                    if (ket && (masuk > 0 || keluar > 0) && tglStr) {
                         const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
-                        let dateObj = new Date(tglStr || txDate);
-                        let formattedTgl = `${dateObj.getDate()} ${monthsList[dateObj.getMonth()]}`;
+                        let parts = tglStr.split('-');
+                        let formattedTgl = tglStr;
+                        if (parts.length === 3) {
+                            formattedTgl = `${parseInt(parts[2])} ${monthsList[parseInt(parts[1]) - 1]}`;
+                        }
 
                         if (masuk > 0) {
                             listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'masuk', nominal: masuk });
@@ -1485,18 +1508,18 @@
                     }
                 });
 
-                const targetDate = sampleDate || new Date();
-                const targetWeek = getJumatRangeKeyFromDate(targetDate);
+                const targetDateStr = sampleDateStr || new Date().toISOString().split('T')[0];
+                const targetWeek = getJumatRangeKeyFromDate(targetDateStr);
 
                 if (!masterDatabase.jumat) masterDatabase.jumat = {};
                 masterDatabase.jumat[targetWeek.key] = {
-                    saldoAwal: Number(saldoAwal) || 4329440,
+                    saldoAwal: Number(saldoAwal) || 0,
                     listTx: listTx
                 };
 
                 syncToCloud(masterDatabase);
 
-                // Auto Pindah Kartu Pekan
+                // Otomatis Pindah Kartu Pekan Ke Pekan Hasil Upload
                 const todayWeek = getJumatRangeKey(0);
                 const diffTime = targetWeek.jumatObj - todayWeek.jumatObj;
                 currentJumatWeekOffset = Math.round(diffTime / (1000 * 60 * 60 * 24 * 7));
