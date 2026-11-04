@@ -1391,7 +1391,7 @@
             checkAdminSession();
         }
 
-        // 3. Tambah & Edit Transaksi Manual Jumat
+        // 3. Tambah, Edit & Hapus Transaksi Manual Jumat (PERBAIKAN FITUR EDIT & DELETE)
         function openJumatAddModal() { 
             const now = new Date();
             document.getElementById('jumatTgl').value = now.toISOString().split('T')[0];
@@ -1421,7 +1421,7 @@
 
             const inputDateObj = new Date(rawDate);
             const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
-            const formattedTgl = `${inputDateObj.getDate()} ${monthsList[inputDateObj.getMonth()]}`;
+            const formattedTgl = isNaN(inputDateObj.getTime()) ? rawDate : `${inputDateObj.getDate()} ${monthsList[inputDateObj.getMonth()]}`;
 
             masterDatabase.jumat[rangeInfo.key].listTx.push({ 
                 rawDate: rawDate,
@@ -1437,7 +1437,73 @@
             alert("Transaksi Jumat Berhasil Disimpan!");
         }
 
-        // 1. Fungsi Hapus Langsung Semua Data Pekan Ini
+        // --- FITUR EDIT TRANSAKSI JUMAT ---
+        function openJumatEditModal(idx) {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) return;
+
+            const tx = masterDatabase.jumat[rangeInfo.key].listTx[idx];
+            if (!tx) return;
+
+            document.getElementById('editJumatIndex').value = idx;
+            document.getElementById('editJumatType').value = tx.type;
+            document.getElementById('editJumatTgl').value = tx.rawDate || "";
+            document.getElementById('editJumatKet').value = tx.ket;
+            document.getElementById('editJumatNominal').value = tx.nominal;
+
+            document.getElementById('jumatEditModal').classList.remove('hidden');
+        }
+
+        function closeJumatEditModal() {
+            document.getElementById('jumatEditModal').classList.add('hidden');
+        }
+
+        function saveJumatEditTransaction() {
+            const idx = document.getElementById('editJumatIndex').value;
+            const type = document.getElementById('editJumatType').value;
+            const rawDate = document.getElementById('editJumatTgl').value;
+            const ket = document.getElementById('editJumatKet').value;
+            const nominal = Number(document.getElementById('editJumatNominal').value) || 0;
+
+            if (!rawDate || !ket || !nominal) {
+                alert("Harap isi Tanggal, Keterangan, dan Nominal!");
+                return;
+            }
+
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) return;
+
+            const inputDateObj = new Date(rawDate);
+            const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+            const formattedTgl = isNaN(inputDateObj.getTime()) ? rawDate : `${inputDateObj.getDate()} ${monthsList[inputDateObj.getMonth()]}`;
+
+            masterDatabase.jumat[rangeInfo.key].listTx[idx] = {
+                rawDate,
+                tgl: formattedTgl,
+                ket,
+                type,
+                nominal
+            };
+
+            syncToCloud(masterDatabase);
+            renderJumatPeriod();
+            closeJumatEditModal();
+            alert("Transaksi Berhasil Diperbarui!");
+        }
+
+        // --- FITUR HAPUS SATU TRANSAKSI JUMAT ---
+        function deleteJumatTx(idx) {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) return;
+
+            if (confirm("Apakah Anda yakin ingin menghapus baris transaksi ini?")) {
+                masterDatabase.jumat[rangeInfo.key].listTx.splice(idx, 1);
+                syncToCloud(masterDatabase);
+                renderJumatPeriod();
+            }
+        }
+
+        // --- FITUR HAPUS SEMUA DATA PEKAN INI ---
         function resetJumatPeriod() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             if (confirm(`Apakah Anda yakin ingin MENGHAPUS SEMUA DATA transaksi pada periode ${rangeInfo.label}?`)) {
@@ -1450,7 +1516,7 @@
             }
         }
 
-        // 2. Processing File Excel khusus Pekan Jumat (Mendukung Nominal Minus / Negatif)
+        // 4. PARSER PERBAIKAN TOTAL: MEMBACA RINGKASAN UNTUK KARTU & MEMBACA TABEL TRANSAKSI PRESISI
         function processJumatFile(file) {
             if (!file) return;
 
@@ -1464,31 +1530,50 @@
                 let saldoAwal = 0;
                 let listTx = [];
 
-                rows.forEach((row, r_idx) => {
-                    if (!row || !row.length) return;
-                    let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
-
-                    // Deteksi Saldo Awal (Mendukung Positif & Negatif)
-                    if (rowStr.includes("saldo awal")) {
-                        row.forEach(cell => {
-                            if (typeof cell === 'number' && !isNaN(cell) && cell !== 0) saldoAwal = cell;
-                        });
+                // A. MEMBACA BARIS RINGKASAN (SALDO AWAL) DARI DUA BARIS HAPAPAN (BARIS TEKS & BARIS ANGKA DIBAWAHNYA)
+                for (let i = 0; i < rows.length; i++) {
+                    let row = rows[i];
+                    if (!row || !row.length) continue;
+                    
+                    let rowStr = row.map(c => String(c || '').trim().toLowerCase()).join(" ");
+                    
+                    if (rowStr.includes("saldo awal") && rowStr.includes("total pemasukan")) {
+                        // Cari posisi kolom "Saldo Awal"
+                        let saldoColIdx = row.findIndex(c => String(c || '').toLowerCase().includes("saldo awal"));
+                        
+                        // Nilai nominal berada di baris persis di bawahnya (i + 1)
+                        if (saldoColIdx !== -1 && i + 1 < rows.length) {
+                            let nextRow = rows[i + 1];
+                            let val = nextRow[saldoColIdx];
+                            if (typeof val === 'number' && !isNaN(val)) {
+                                saldoAwal = val;
+                            }
+                        }
+                        break;
                     }
+                }
 
-                    // Abaikan Baris Judul & Total
-                    if (rowStr.includes("masjid") || rowStr.includes("pekan jumat") || rowStr.includes("ringkasan") || rowStr.includes("saldo awal") || rowStr.includes("total") || rowStr.includes("takmir") || rowStr.includes("bendahara")) {
+                // B. MEMBACA TABEL UTAMA TRANSAKSI
+                rows.forEach((row) => {
+                    if (!row || !row.length) return;
+                    
+                    let rowStr = row.map(c => String(c || '').trim().toLowerCase()).join(" ");
+
+                    // Abaikan Baris Header, Judul, Ringkasan, Total Pekan, Tanggal Cetak, dan Tanda Tangan
+                    if (rowStr.includes("masjid") || rowStr.includes("pekan jumat") || rowStr.includes("ringkasan") || 
+                        rowStr.includes("saldo awal") || rowStr.includes("total pekan") || rowStr.includes("total pemasukan") || 
+                        rowStr.includes("takmir") || rowStr.includes("bendahara") || rowStr.includes("semarang,")) {
                         return;
                     }
                     if (rowStr.includes("no") && rowStr.includes("tanggal")) return;
 
-                    let tglStr = "", ket = "", masuk = null, keluar = null;
+                    // Struktur Kolom Excel: 0: No, 1: Tanggal, 2: Keterangan, 3: Pemasukan, 4: Pengeluaran
+                    let tglStr = (row.length > 1 && row[1] !== null && row[1] !== undefined) ? String(row[1]).trim() : "";
+                    let ket = (row.length > 2 && row[2] !== null && row[2] !== undefined) ? String(row[2]).trim() : "";
+                    let masuk = (row.length > 3 && typeof row[3] === 'number' && !isNaN(row[3])) ? row[3] : null;
+                    let keluar = (row.length > 4 && typeof row[4] === 'number' && !isNaN(row[4])) ? row[4] : null;
 
-                    if (row.length > 1 && row[1] !== null && row[1] !== undefined) tglStr = String(row[1]).trim();
-                    if (row.length > 2 && row[2] !== null && row[2] !== undefined) ket = String(row[2]).trim();
-                    if (row.length > 3 && typeof row[3] === 'number') masuk = row[3];
-                    if (row.length > 4 && typeof row[4] === 'number') keluar = row[4];
-
-                    // Pembacaan Nominal (Mendukung Angka Minus / Negatif)
+                    // Ekstrak Hanya Baris Transaksi Asli
                     if (ket && (masuk !== null || keluar !== null)) {
                         let formattedTgl = tglStr || "-";
                         
@@ -1501,7 +1586,7 @@
                     }
                 });
 
-                // Tepat disimpan pada Periode Kartu Pekan yang sedang Aktif dibuka User
+                // Simpan ke database periode aktif saat ini
                 const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
 
                 if (!masterDatabase.jumat) masterDatabase.jumat = {};
