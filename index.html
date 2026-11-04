@@ -578,7 +578,7 @@
         }
 
         // --- AUTH & ADMIN PANEL ---
-     function checkAdminSession() {
+    function checkAdminSession() {
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
             const colActions = document.querySelectorAll('.col-action');
 
@@ -587,15 +587,19 @@
                 document.getElementById('adminBadge').classList.remove('hidden');
                 
                 if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
-                    // Sembunyikan panel bulanan, tampilkan panel upload & tombol Jumat
                     document.getElementById('adminPanel').classList.add('hidden');
+                    
                     const jumatCtrl = document.getElementById('jumatAdminControls');
-                    if (jumatCtrl) jumatCtrl.classList.remove('hidden');
+                    if (jumatCtrl) {
+                        jumatCtrl.classList.remove('hidden');
+                        jumatCtrl.style.display = 'flex';
+                    }
                     
                     const jumatDrop = document.getElementById('jumatDropZoneContainer');
                     if (jumatDrop) jumatDrop.classList.remove('hidden');
                 } else {
                     document.getElementById('adminPanel').classList.remove('hidden');
+                    
                     const jumatCtrl = document.getElementById('jumatAdminControls');
                     if (jumatCtrl) jumatCtrl.classList.add('hidden');
                     
@@ -618,7 +622,6 @@
                 colActions.forEach(el => el.classList.add('hidden'));
             }
         }
-
         function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); document.getElementById('inputPin').focus(); }
         function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); document.getElementById('inputPin').value = ''; }
 
@@ -1252,7 +1255,7 @@
         let currentMode = "bulanan"; 
         let currentJumatWeekOffset = 0;
 
-      function switchMode(mode) {
+   function switchMode(mode) {
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
@@ -1263,16 +1266,19 @@
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.remove('hidden');
                 
-                // Menyembunyikan panel upload bulanan & section bulanan saat mode jumat
+                // Sembunyikan elemen Laporan Bulanan
                 document.getElementById('adminPanel').classList.add('hidden');
                 document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
+                
+                // Tampilkan Laporan Jumat & langsung cek status admin
                 renderJumatPeriod();
+                checkAdminSession();
             } else {
                 btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.add('hidden');
                 
-                // Menampilkan kembali section bulanan & panel admin jika sedang logged in
+                // Tampilkan kembali elemen Laporan Bulanan
                 document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
                 checkAdminSession();
                 renderCurrentPeriod();
@@ -1298,7 +1304,7 @@ function getJumatRangeKeyFromDate(dInput) {
 
             if (isNaN(date.getTime())) date = new Date();
 
-            const day = date.getDay(); // 0: Mingu, 5: Jumat
+            const day = date.getDay(); // 0: Minggu, 1: Senin, ..., 5: Jumat, 6: Sabtu
             const diffToJumat = (day >= 5) ? (day - 5) : (day + 2);
             
             const jumat = new Date(date);
@@ -1313,6 +1319,12 @@ function getJumatRangeKeyFromDate(dInput) {
             const key = `${jumat.getFullYear()}-${String(jumat.getMonth()+1).padStart(2,'0')}-${String(jumat.getDate()).padStart(2,'0')}`;
 
             return { key, label, jumatObj: jumat, kamisObj: kamis };
+        }
+
+        function getJumatRangeKey(offset = 0) {
+            const now = new Date();
+            now.setDate(now.getDate() + (offset * 7));
+            return getJumatRangeKeyFromDate(now);
         }
 
        function renderJumatPeriod() {
@@ -1656,7 +1668,17 @@ function handleJumatExcelUpload(event) {
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
             fetchCloudData();
+            
+            // Event Listener khusus Drag & Drop Jumat
+        document.addEventListener("DOMContentLoaded", () => {
+            const jumatDrop = document.getElementById('jumatDropZoneContainer');
+            const jumatInput = document.getElementById('jumatFileInput');
+            if (jumatDrop && jumatInput) {
+                jumatDrop.addEventListener('click', () => jumatInput.click());
+            }
         });
+        });
+        
     </script>
 </body>
 </html>
