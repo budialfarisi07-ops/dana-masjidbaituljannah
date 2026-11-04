@@ -73,7 +73,103 @@
                 <span id="uploadStatus" class="text-slate-500 italic">Belum ada file di-upload</span>
             </div>
         </div>
+<!-- NAVIGASI MODE LAPORAN (BULANAN VS PEKAN JUMAT) -->
+        <div class="flex justify-center gap-2 mb-4">
+            <button id="btnTabBulanan" onclick="switchMode('bulanan')" class="bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700">
+                <i class="fa-solid fa-calendar-days"></i> Laporan Bulanan Utama
+            </button>
+            <button id="btnTabJumat" onclick="switchMode('jumat')" class="bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition">
+                <i class="fa-solid fa-mosque"></i> Laporan Pekan Jumat
+            </button>
+        </div>
 
+        <!-- DASHBOARD KHUSUS LAPORAN PEKAN JUMAT (AWALNYA TERSEMBUNYI) -->
+        <div id="sectionJumat" class="hidden">
+            <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 sm:p-5 mb-6 shadow-sm">
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                    <div>
+                        <h2 class="font-bold text-emerald-900 text-base sm:text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-kaaba text-emerald-700"></i> Laporan Pekan Jumat
+                        </h2>
+                        <p class="text-xs text-emerald-700">Periode Transaksi Mingguan (Jumat s/d Kamis)</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeJumatWeek(-1)" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
+                            <i class="fa-solid fa-chevron-left"></i> Pekan Lalu
+                        </button>
+                        <span id="txtJumatRange" class="font-bold text-xs sm:text-sm text-slate-800 bg-white px-3 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
+                            Memuat Pekan...
+                        </span>
+                        <button onclick="changeJumatWeek(1)" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
+                            Pekan Depan <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Kartu Kas Pekanan -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-blue-600 text-white p-3.5 rounded-xl shadow-sm">
+                        <p class="text-[11px] opacity-90">Saldo Awal Pekan</p>
+                        <p id="jumatSaldoAwal" class="text-sm sm:text-base font-extrabold mt-1">Rp 0</p>
+                    </div>
+                    <div class="bg-emerald-600 text-white p-3.5 rounded-xl shadow-sm">
+                        <p class="text-[11px] opacity-90">Pemasukan Pekan Ini</p>
+                        <p id="jumatPemasukan" class="text-sm sm:text-base font-extrabold mt-1">Rp 0</p>
+                    </div>
+                    <div class="bg-rose-600 text-white p-3.5 rounded-xl shadow-sm">
+                        <p class="text-[11px] opacity-90">Pengeluaran Pekan Ini</p>
+                        <p id="jumatPengeluaran" class="text-sm sm:text-base font-extrabold mt-1">Rp 0</p>
+                    </div>
+                    <div class="bg-purple-600 text-white p-3.5 rounded-xl shadow-sm">
+                        <p class="text-[11px] opacity-90">Saldo Akhir Pekan</p>
+                        <p id="jumatSaldoAkhir" class="text-sm sm:text-base font-extrabold mt-1">Rp 0</p>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Admin & Export Pekan Jumat -->
+                <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
+                    <div id="jumatAdminControls" class="hidden flex items-center gap-2">
+                        <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow">
+                            + Tambah Transaksi Pekanan
+                        </button>
+                    </div>
+                    <button onclick="exportJumatPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow flex items-center gap-1.5 ml-auto">
+                        <i class="fa-solid fa-file-pdf"></i> Unduh PDF Laporan Jumat
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabel Detail Transaksi Pekan Ini -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+                <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 font-bold text-slate-800 text-sm flex justify-between items-center">
+                    <span><i class="fa-solid fa-list-check text-emerald-600 mr-1.5"></i> Detail Transaksi Pekan Ini</span>
+                </div>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-200">
+                                <th class="pb-2 w-24">Tgl</th>
+                                <th class="pb-2">Keterangan</th>
+                                <th class="pb-2 text-right w-28 text-emerald-600">Masuk</th>
+                                <th class="pb-2 text-right w-28 text-rose-600">Keluar</th>
+                                <th class="pb-2 text-center col-action hidden w-16">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblJumatTransaksi" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold bg-slate-50 border-t border-slate-200">
+                                <td colspan="2" class="py-3 text-slate-700">TOTAL PEKAN INI</td>
+                                <td id="jumatTotalMasuk" class="py-3 text-right text-emerald-600">Rp 0</td>
+                                <td id="jumatTotalKeluar" class="py-3 text-right text-rose-600">Rp 0</td>
+                                <td class="col-action hidden"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
         <!-- FILTER DROPDOWN PERIODE -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
             <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -290,10 +386,48 @@
             </div>
         </div>
     </div>
+    <!-- Modal Tambah Transaksi Pekan Jumat -->
+    <div id="jumatAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-kaaba text-emerald-600"></i> Transaksi Pekan Jumat
+                </h3>
+                <button onclick="closeJumatAddModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Jenis Transaksi</label>
+                    <select id="jumatType" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1 font-semibold">
+                        <option value="masuk">PEMASUKAN (Masuk)</option>
+                        <option value="keluar">PENGELUARAN (Keluar)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Tanggal Transaksi</label>
+                    <input type="text" id="jumatTgl" placeholder="Contoh: Jum, 23 Okt / 23/10/2026" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Keterangan</label>
+                    <input type="text" id="jumatKet" placeholder="Keterangan Transaksi" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Nominal (Rp)</label>
+                    <input type="number" id="jumatNominal" placeholder="0" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1 font-mono">
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeJumatAddModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Batal</button>
+                <button onclick="saveJumatTransaction()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Simpan Data</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // MASUKKAN URL WEB APP HASIL DEPLOYMENT APPS SCRIPT ANDA DI SINI
-        const API_URL = "https://script.google.com/macros/s/AKfycbxJwvbDbwBOXZImC8X9jO3sVRyQ2elRTekJP2fRhY08MLIw7a_WbtiXfYbt_egQcWgp8g/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyh-XsQEV-pEkuo1y9K2aUy_Yszr1RZvVPwCFPR3NVqtJNReBfbAtl88z-KOCYWGgbvbQ/exec";
 
         let masterDatabase = {};
 
@@ -985,6 +1119,234 @@
             });
 
             doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
+        }
+        // ==========================================
+        // --- LOGIKA KEUANGAN PEKAN JUMAT ---
+        // ==========================================
+        let currentMode = "bulanan"; // "bulanan" atau "jumat"
+        let currentJumatWeekOffset = 0; // 0 = pekan ini
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const btnB = document.getElementById('btnTabBulanan');
+            const btnJ = document.getElementById('btnTabJumat');
+            const secJ = document.getElementById('sectionJumat');
+            const mainEl = document.querySelector('main');
+
+            if (mode === 'jumat') {
+                btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
+                btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                secJ.classList.remove('hidden');
+                
+                // Sembunyikan bagian bulanan
+                document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
+                renderJumatPeriod();
+            } else {
+                btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
+                btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                secJ.classList.add('hidden');
+                
+                // Tampilkan kembali bagian bulanan
+                document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
+                renderCurrentPeriod();
+            }
+        }
+
+        // Penghitung rentang tanggal Jumat - Kamis
+        function getJumatRangeKey(offset = 0) {
+            const now = new Date();
+            const day = now.getDay(); // 0: Mingu, 5: Jumat
+            const diffToJumat = (day >= 5) ? (day - 5) : (day + 2);
+            
+            const jumat = new Date(now);
+            jumat.setDate(now.getDate() - diffToJumat + (offset * 7));
+            
+            const kamis = new Date(jumat);
+            kamis.setDate(jumat.getDate() + 6);
+
+            const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+            
+            const label = `Jum, ${jumat.getDate()} ${monthsList[jumat.getMonth()]} - Kam, ${kamis.getDate()} ${monthsList[kamis.getMonth()]}`;
+            const key = `${jumat.getFullYear()}-${String(jumat.getMonth()+1).padStart(2,'0')}-${String(jumat.getDate()).padStart(2,'0')}`;
+
+            return { key, label, jumatObj: jumat, kamisObj: kamis };
+        }
+
+        function changeJumatWeek(dir) {
+            currentJumatWeekOffset += dir;
+            renderJumatPeriod();
+        }
+
+        function renderJumatPeriod() {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            document.getElementById('txtJumatRange').innerText = rangeInfo.label;
+            
+            const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
+            if (isAdmin) {
+                document.getElementById('jumatAdminControls').classList.remove('hidden');
+            } else {
+                document.getElementById('jumatAdminControls').classList.add('hidden');
+            }
+
+            // Ambil data Jumat dari struktur `masterDatabase.jumat`
+            if (!masterDatabase.jumat) masterDatabase.jumat = {};
+            const weekData = masterDatabase.jumat[rangeInfo.key] || {
+                saldoAwal: 4329440,
+                listTx: []
+            };
+
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+
+            (weekData.listTx || []).forEach(tx => {
+                if (tx.type === 'masuk') totalMasuk += Number(tx.nominal);
+                else totalKeluar += Number(tx.nominal);
+            });
+
+            let saldoAkhir = Number(weekData.saldoAwal) + totalMasuk - totalKeluar;
+
+            document.getElementById('jumatSaldoAwal').innerText = formatRp(weekData.saldoAwal);
+            document.getElementById('jumatPemasukan').innerText = formatRp(totalMasuk);
+            document.getElementById('jumatPengeluaran').innerText = formatRp(totalKeluar);
+            document.getElementById('jumatSaldoAkhir').innerText = formatRp(saldoAkhir);
+
+            document.getElementById('jumatTotalMasuk').innerText = formatRp(totalMasuk);
+            document.getElementById('jumatTotalKeluar').innerText = formatRp(totalKeluar);
+
+            const tbody = document.getElementById('tblJumatTransaksi');
+            if (weekData.listTx && weekData.listTx.length > 0) {
+                tbody.innerHTML = weekData.listTx.map((tx, idx) => `
+                    <tr>
+                        <td class="py-2.5 text-slate-500 text-xs">${tx.tgl}</td>
+                        <td class="py-2.5 font-medium text-slate-700">${tx.ket}</td>
+                        <td class="py-2.5 text-right font-semibold text-emerald-600">${tx.type === 'masuk' ? formatRp(tx.nominal) : '-'}</td>
+                        <td class="py-2.5 text-right font-semibold text-rose-600">${tx.type === 'keluar' ? formatRp(tx.nominal) : '-'}</td>
+                        <td class="py-2.5 text-center col-action ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="deleteJumatTx(${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>`;
+            }
+        }
+
+        // Modal Handler Jumat
+        function openJumatAddModal() { document.getElementById('jumatAddModal').classList.remove('hidden'); }
+        function closeJumatAddModal() { document.getElementById('jumatAddModal').classList.add('hidden'); }
+
+        function saveJumatTransaction() {
+            const type = document.getElementById('jumatType').value;
+            const tgl = document.getElementById('jumatTgl').value || "Jum";
+            const ket = document.getElementById('jumatKet').value;
+            const nominal = Number(document.getElementById('jumatNominal').value) || 0;
+
+            if (!ket || !nominal) {
+                alert("Harap isi Keterangan dan Nominal transaksi!");
+                return;
+            }
+
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat) masterDatabase.jumat = {};
+            if (!masterDatabase.jumat[rangeInfo.key]) {
+                masterDatabase.jumat[rangeInfo.key] = { saldoAwal: 4329440, listTx: [] };
+            }
+
+            masterDatabase.jumat[rangeInfo.key].listTx.push({ tgl, ket, type, nominal });
+            syncToCloud(masterDatabase);
+            renderJumatPeriod();
+            closeJumatAddModal();
+        }
+
+        function deleteJumatTx(index) {
+            if (confirm("Hapus baris transaksi pekanan ini?")) {
+                const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+                masterDatabase.jumat[rangeInfo.key].listTx.splice(index, 1);
+                syncToCloud(masterDatabase);
+                renderJumatPeriod();
+            }
+        }
+
+        // --- EXPORT PDF KHUSUS LAPORAN PEKAN JUMAT ---
+        function exportJumatPDF() {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) {
+                alert("Belum ada data transaksi pada pekan ini untuk dicetak.");
+                return;
+            }
+
+            const weekData = masterDatabase.jumat[rangeInfo.key];
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("MASJID BAITUL JANNAH", 14, 15);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text("Karangbendo - Kota Semarang", 14, 20);
+
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("LAPORAN PEKAN JUMAT", 14, 28);
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Periode: ${rangeInfo.label}`, 14, 33);
+
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+            (weekData.listTx || []).forEach(tx => {
+                if (tx.type === 'masuk') totalMasuk += Number(tx.nominal);
+                else totalKeluar += Number(tx.nominal);
+            });
+            let saldoAkhir = Number(weekData.saldoAwal) + totalMasuk - totalKeluar;
+
+            doc.autoTable({
+                startY: 37,
+                head: [["Saldo Awal", "Total Pemasukan", "Total Pengeluaran", "Saldo Akhir"]],
+                body: [[formatRp(weekData.saldoAwal), formatRp(totalMasuk), formatRp(totalKeluar), formatRp(saldoAkhir)]],
+                theme: 'grid',
+                headStyles: { fillColor: [5, 150, 105], textColor: 255, halign: 'center' },
+                bodyStyles: { halign: 'center', fontStyle: 'bold' }
+            });
+
+            const txBody = (weekData.listTx || []).map((tx, idx) => [
+                idx + 1,
+                tx.tgl,
+                tx.ket,
+                tx.type === 'masuk' ? formatRp(tx.nominal) : "",
+                tx.type === 'keluar' ? formatRp(tx.nominal) : ""
+            ]);
+
+            txBody.push(["", "", "TOTAL PEKAN", formatRp(totalMasuk), formatRp(totalKeluar)]);
+
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 6,
+                head: [["No", "Tanggal", "Keterangan", "Masuk", "Keluar"]],
+                body: txBody,
+                theme: 'grid',
+                headStyles: { fillColor: [71, 85, 105], textColor: 255 },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 12 },
+                    1: { cellWidth: 28 },
+                    3: { halign: 'right' },
+                    4: { halign: 'right' }
+                }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 15;
+            if (finalY > 240) { doc.addPage(); finalY = 20; }
+
+            doc.setFontSize(9);
+            doc.text("Ketua Takmir,", 14, finalY);
+            doc.text("Semarang, 2 November 2026", 140, finalY);
+            doc.text("Bendahara,", 140, finalY + 5);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("( Fadlan Zaenuri, S.H )", 14, finalY + 20);
+            doc.text("( Aditya Budi Santoso, M.Ag )", 140, finalY + 20);
+
+            doc.save(`Laporan_Jumat_Masjid_Baitul_Jannah.pdf`);
         }
         // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
         document.addEventListener("DOMContentLoaded", () => {
