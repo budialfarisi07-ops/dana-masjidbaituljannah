@@ -83,7 +83,6 @@
             </button>
         </div>
 
-        <!-- DASHBOARD KHUSUS LAPORAN PEKAN JUMAT (AWALNYA TERSEMBUNYI) -->
         <!-- DASHBOARD KHUSUS LAPORAN PEKAN JUMAT -->
         <div id="sectionJumat" class="hidden">
             <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 sm:p-5 mb-6 shadow-sm">
@@ -106,6 +105,15 @@
                         </button>
                     </div>
                 </div>
+                
+                <!-- PANEL UPLOAD DRAG & DROP EXCEL KHUSUS LAPORAN JUMAT -->
+            <div id="jumatDropZoneContainer" class="hidden bg-emerald-100/60 border-2 border-dashed border-emerald-400 rounded-2xl p-4 mb-4 text-center cursor-pointer hover:border-emerald-600 transition">
+                <label for="jumatFileInput" class="cursor-pointer">
+                    <i class="fa-solid fa-file-excel text-3xl text-emerald-600 mb-1"></i>
+                    <p class="text-xs sm:text-sm font-bold text-slate-700">Tarik & Lepas File Excel Pekan Jumat Ke Sini</p>
+                    <p class="text-[11px] text-slate-500">atau klik di sini untuk memilih file pekanan</p>
+                </label>
+            </div>
 
                 <!-- 4 Kartu Kas Pekanan -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -535,11 +543,19 @@
                     masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
                 }
                 
-                renderCurrentPeriod();
+                if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
+                    renderJumatPeriod();
+                } else {
+                    renderCurrentPeriod();
+                }
             } catch (e) {
                 console.error("Gagal sinkron Cloud:", e);
                 masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-                renderCurrentPeriod();
+                if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
+                    renderJumatPeriod();
+                } else {
+                    renderCurrentPeriod();
+                }
             }
         }
 
@@ -562,19 +578,43 @@
         }
 
         // --- AUTH & ADMIN PANEL ---
-        function checkAdminSession() {
+     function checkAdminSession() {
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
             const colActions = document.querySelectorAll('.col-action');
 
             if (isAdmin) {
                 document.getElementById('btnLogin').classList.add('hidden');
                 document.getElementById('adminBadge').classList.remove('hidden');
-                document.getElementById('adminPanel').classList.remove('hidden');
+                
+                if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
+                    // Sembunyikan panel bulanan, tampilkan panel upload & tombol Jumat
+                    document.getElementById('adminPanel').classList.add('hidden');
+                    const jumatCtrl = document.getElementById('jumatAdminControls');
+                    if (jumatCtrl) jumatCtrl.classList.remove('hidden');
+                    
+                    const jumatDrop = document.getElementById('jumatDropZoneContainer');
+                    if (jumatDrop) jumatDrop.classList.remove('hidden');
+                } else {
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    const jumatCtrl = document.getElementById('jumatAdminControls');
+                    if (jumatCtrl) jumatCtrl.classList.add('hidden');
+                    
+                    const jumatDrop = document.getElementById('jumatDropZoneContainer');
+                    if (jumatDrop) jumatDrop.classList.add('hidden');
+                }
+
                 colActions.forEach(el => el.classList.remove('hidden'));
             } else {
                 document.getElementById('btnLogin').classList.remove('hidden');
                 document.getElementById('adminBadge').classList.add('hidden');
                 document.getElementById('adminPanel').classList.add('hidden');
+                
+                const jumatCtrl = document.getElementById('jumatAdminControls');
+                if (jumatCtrl) jumatCtrl.classList.add('hidden');
+                
+                const jumatDrop = document.getElementById('jumatDropZoneContainer');
+                if (jumatDrop) jumatDrop.classList.add('hidden');
+                
                 colActions.forEach(el => el.classList.add('hidden'));
             }
         }
@@ -1275,16 +1315,11 @@ function getJumatRangeKeyFromDate(dInput) {
             return { key, label, jumatObj: jumat, kamisObj: kamis };
         }
 
-        function renderJumatPeriod() {
+       function renderJumatPeriod() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             document.getElementById('txtJumatRange').innerText = rangeInfo.label;
             
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
-            if (isAdmin) {
-                document.getElementById('jumatAdminControls').classList.remove('hidden');
-            } else {
-                document.getElementById('jumatAdminControls').classList.add('hidden');
-            }
 
             if (!masterDatabase.jumat) masterDatabase.jumat = {};
             const weekData = masterDatabase.jumat[rangeInfo.key] || {
