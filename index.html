@@ -84,6 +84,7 @@
         </div>
 
         <!-- DASHBOARD KHUSUS LAPORAN PEKAN JUMAT (AWALNYA TERSEMBUNYI) -->
+        <!-- DASHBOARD KHUSUS LAPORAN PEKAN JUMAT -->
         <div id="sectionJumat" class="hidden">
             <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 sm:p-5 mb-6 shadow-sm">
                 <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
@@ -126,12 +127,16 @@
                     </div>
                 </div>
 
-                <!-- Tombol Aksi Admin & Export Pekan Jumat -->
+                <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
                 <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
-                    <div id="jumatAdminControls" class="hidden flex items-center gap-2">
-                        <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow">
-                            + Tambah Transaksi Pekanan
+                    <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
+                        <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Input Manual
                         </button>
+                        <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
+                            <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
+                        </label>
                     </div>
                     <button onclick="exportJumatPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow flex items-center gap-1.5 ml-auto">
                         <i class="fa-solid fa-file-pdf"></i> Unduh PDF Laporan Jumat
@@ -148,11 +153,11 @@
                     <table class="w-full text-left text-xs sm:text-sm">
                         <thead>
                             <tr class="text-slate-400 border-b border-slate-200">
-                                <th class="pb-2 w-24">Tgl</th>
+                                <th class="pb-2 w-28">Tgl</th>
                                 <th class="pb-2">Keterangan</th>
                                 <th class="pb-2 text-right w-28 text-emerald-600">Masuk</th>
                                 <th class="pb-2 text-right w-28 text-rose-600">Keluar</th>
-                                <th class="pb-2 text-center col-action hidden w-16">Aksi</th>
+                                <th class="pb-2 text-center col-action hidden w-20">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tblJumatTransaksi" class="divide-y divide-slate-100">
@@ -337,13 +342,16 @@
                     <label class="text-[11px] font-semibold text-slate-500">PIN Baru</label>
                     <input type="password" id="pinBaru" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
                 </div>
+                <!-- EDIT NAMA TAKMIR & BENDAHARA FITUR BARU -->
+                <div class="border-t border-slate-200 pt-2">
+                    <label class="text-[11px] font-semibold text-slate-500">Nama Ketua Takmir (Untuk PDF)</label>
+                    <input type="text" id="takmirNameInput" placeholder="Fadlan Zaenuri, S.H" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Nama Bendahara (Untuk PDF)</label>
+                    <input type="text" id="bendaharaNameInput" placeholder="Aditya Budi Santoso, M.Ag" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="closeSettingModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Batal</button>
-                <button onclick="saveNewPin()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Simpan PIN</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal Edit Transaksi -->
     <div id="editModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
@@ -391,7 +399,7 @@
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                    <i class="fa-solid fa-kaaba text-emerald-600"></i> Transaksi Pekan Jumat
+                    <i class="fa-solid fa-kaaba text-emerald-600"></i> Tambah Transaksi Jumat
                 </h3>
                 <button onclick="closeJumatAddModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -405,11 +413,11 @@
                     </select>
                 </div>
                 <div>
-                    <label class="text-[11px] font-semibold text-slate-500">Tanggal Transaksi</label>
-                    <input type="text" id="jumatTgl" placeholder="Contoh: Jum, 23 Okt / 23/10/2026" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
+                    <label class="text-[11px] font-semibold text-slate-500">Tanggal Transaksi (Otomatis Sinkron Pekan)</label>
+                    <input type="date" id="jumatTgl" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1 font-mono">
                 </div>
                 <div>
-                    <label class="text-[11px] font-semibold text-slate-500">Keterangan</label>
+                    <label class="text-[11px] font-semibold text-slate-500">Keterangan Transaksi</label>
                     <input type="text" id="jumatKet" placeholder="Keterangan Transaksi" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
                 </div>
                 <div>
@@ -421,6 +429,46 @@
             <div class="flex gap-2">
                 <button onclick="closeJumatAddModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Batal</button>
                 <button onclick="saveJumatTransaction()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Simpan Data</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Transaksi Pekan Jumat (FITUR BARU) -->
+    <div id="jumatEditModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-emerald-600"></i> Edit Transaksi Jumat
+                </h3>
+                <button onclick="closeJumatEditModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="editJumatIndex">
+            
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Jenis Transaksi</label>
+                    <select id="editJumatType" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1 font-semibold">
+                        <option value="masuk">PEMASUKAN (Masuk)</option>
+                        <option value="keluar">PENGELUARAN (Keluar)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Tanggal Transaksi</label>
+                    <input type="date" id="editJumatTgl" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1 font-mono">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Keterangan Transaksi</label>
+                    <input type="text" id="editJumatKet" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Nominal (Rp)</label>
+                    <input type="number" id="editJumatNominal" class="w-full border border-slate-300 p-2 rounded-lg text-sm mt-1 font-mono">
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeJumatEditModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Batal</button>
+                <button onclick="saveJumatEditTransaction()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Simpan Perubahan</button>
             </div>
         </div>
     </div>
@@ -1121,24 +1169,60 @@
             doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
         }
         // ==========================================
+      // --- NAMA TAKMIR & BENDAHARA DINAMIS ---
+        function getTakmirName() {
+            return localStorage.getItem('takmir_name') || "Fadlan Zaenuri, S.H";
+        }
+        function getBendaharaName() {
+            return localStorage.getItem('bendahara_name') || "Aditya Budi Santoso, M.Ag";
+        }
+
+        function openSettingModal() { 
+            document.getElementById('takmirNameInput').value = getTakmirName();
+            document.getElementById('bendaharaNameInput').value = getBendaharaName();
+            document.getElementById('settingModal').classList.remove('hidden'); 
+        }
+        function closeSettingModal() { document.getElementById('settingModal').classList.add('hidden'); }
+
+        function saveNewPin() {
+            const lama = document.getElementById('pinLama').value;
+            const baru = document.getElementById('pinBaru').value;
+            const takmir = document.getElementById('takmirNameInput').value;
+            const bendahara = document.getElementById('bendaharaNameInput').value;
+
+            if (lama && lama !== getStoredPin()) {
+                alert("PIN Lama tidak sesuai!");
+                return;
+            }
+            if (baru && baru.length < 4) {
+                alert("PIN Baru minimal 4 karakter!");
+                return;
+            }
+            if (baru) localStorage.setItem('admin_pin_key', baru);
+            if (takmir) localStorage.setItem('takmir_name', takmir);
+            if (bendahara) localStorage.setItem('bendahara_name', bendahara);
+
+            alert("Pengaturan PIN & Nama Pengurus Berhasil Diperbarui!");
+            closeSettingModal();
+        }
+
+        // ==========================================
         // --- LOGIKA KEUANGAN PEKAN JUMAT ---
         // ==========================================
-        let currentMode = "bulanan"; // "bulanan" atau "jumat"
-        let currentJumatWeekOffset = 0; // 0 = pekan ini
+        let currentMode = "bulanan"; 
+        let currentJumatWeekOffset = 0;
 
         function switchMode(mode) {
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
             const secJ = document.getElementById('sectionJumat');
-            const mainEl = document.querySelector('main');
 
             if (mode === 'jumat') {
                 btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.remove('hidden');
                 
-                // Sembunyikan bagian bulanan
                 document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
                 renderJumatPeriod();
             } else {
@@ -1146,20 +1230,19 @@
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 secJ.classList.add('hidden');
                 
-                // Tampilkan kembali bagian bulanan
                 document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
                 renderCurrentPeriod();
             }
         }
 
-        // Penghitung rentang tanggal Jumat - Kamis
-        function getJumatRangeKey(offset = 0) {
-            const now = new Date();
-            const day = now.getDay(); // 0: Mingu, 5: Jumat
+        // Fungsi Menentukan Pekan Jumat (Jumat s/d Kamis) dari Tanggal Apapun
+        function getJumatRangeKeyFromDate(dObj) {
+            const date = new Date(dObj);
+            const day = date.getDay(); // 0: Mingu, 5: Jumat
             const diffToJumat = (day >= 5) ? (day - 5) : (day + 2);
             
-            const jumat = new Date(now);
-            jumat.setDate(now.getDate() - diffToJumat + (offset * 7));
+            const jumat = new Date(date);
+            jumat.setDate(date.getDate() - diffToJumat);
             
             const kamis = new Date(jumat);
             kamis.setDate(jumat.getDate() + 6);
@@ -1170,6 +1253,12 @@
             const key = `${jumat.getFullYear()}-${String(jumat.getMonth()+1).padStart(2,'0')}-${String(jumat.getDate()).padStart(2,'0')}`;
 
             return { key, label, jumatObj: jumat, kamisObj: kamis };
+        }
+
+        function getJumatRangeKey(offset = 0) {
+            const now = new Date();
+            now.setDate(now.getDate() + (offset * 7));
+            return getJumatRangeKeyFromDate(now);
         }
 
         function changeJumatWeek(dir) {
@@ -1188,7 +1277,6 @@
                 document.getElementById('jumatAdminControls').classList.add('hidden');
             }
 
-            // Ambil data Jumat dari struktur `masterDatabase.jumat`
             if (!masterDatabase.jumat) masterDatabase.jumat = {};
             const weekData = masterDatabase.jumat[rangeInfo.key] || {
                 saldoAwal: 4329440,
@@ -1217,11 +1305,12 @@
             if (weekData.listTx && weekData.listTx.length > 0) {
                 tbody.innerHTML = weekData.listTx.map((tx, idx) => `
                     <tr>
-                        <td class="py-2.5 text-slate-500 text-xs">${tx.tgl}</td>
+                        <td class="py-2.5 text-slate-500 text-xs font-mono">${tx.tgl}</td>
                         <td class="py-2.5 font-medium text-slate-700">${tx.ket}</td>
                         <td class="py-2.5 text-right font-semibold text-emerald-600">${tx.type === 'masuk' ? formatRp(tx.nominal) : '-'}</td>
                         <td class="py-2.5 text-right font-semibold text-rose-600">${tx.type === 'keluar' ? formatRp(tx.nominal) : '-'}</td>
                         <td class="py-2.5 text-center col-action ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="openJumatEditModal(${idx})" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-1.5"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="deleteJumatTx(${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
@@ -1229,37 +1318,106 @@
             } else {
                 tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>`;
             }
+
+            checkAdminSession();
         }
 
-        // Modal Handler Jumat
-        function openJumatAddModal() { document.getElementById('jumatAddModal').classList.remove('hidden'); }
+        // --- TAMBAH & EDIT TRANSAKSI JUMAT ---
+        function openJumatAddModal() { 
+            const now = new Date();
+            document.getElementById('jumatTgl').value = now.toISOString().split('T')[0];
+            document.getElementById('jumatKet').value = "";
+            document.getElementById('jumatNominal').value = "";
+            document.getElementById('jumatAddModal').classList.remove('hidden'); 
+        }
         function closeJumatAddModal() { document.getElementById('jumatAddModal').classList.add('hidden'); }
 
         function saveJumatTransaction() {
             const type = document.getElementById('jumatType').value;
-            const tgl = document.getElementById('jumatTgl').value || "Jum";
+            const rawDate = document.getElementById('jumatTgl').value;
             const ket = document.getElementById('jumatKet').value;
             const nominal = Number(document.getElementById('jumatNominal').value) || 0;
 
-            if (!ket || !nominal) {
-                alert("Harap isi Keterangan dan Nominal transaksi!");
+            if (!rawDate || !ket || !nominal) {
+                alert("Harap isi Tanggal, Keterangan, dan Nominal transaksi!");
                 return;
             }
 
-            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            const inputDateObj = new Date(rawDate);
+            const targetWeek = getJumatRangeKeyFromDate(inputDateObj);
+
             if (!masterDatabase.jumat) masterDatabase.jumat = {};
-            if (!masterDatabase.jumat[rangeInfo.key]) {
-                masterDatabase.jumat[rangeInfo.key] = { saldoAwal: 4329440, listTx: [] };
+            if (!masterDatabase.jumat[targetWeek.key]) {
+                masterDatabase.jumat[targetWeek.key] = { saldoAwal: 4329440, listTx: [] };
             }
 
-            masterDatabase.jumat[rangeInfo.key].listTx.push({ tgl, ket, type, nominal });
+            const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+            const formattedTgl = `${inputDateObj.getDate()} ${monthsList[inputDateObj.getMonth()]}`;
+
+            masterDatabase.jumat[targetWeek.key].listTx.push({ 
+                rawDate: rawDate,
+                tgl: formattedTgl, 
+                ket, 
+                type, 
+                nominal 
+            });
+
             syncToCloud(masterDatabase);
+
+            // Auto Sinkron: Hitung offset dan pindah kartu pekan ke pekan transaksi tersebut
+            const todayWeek = getJumatRangeKey(0);
+            const diffTime = targetWeek.jumatObj - todayWeek.jumatObj;
+            currentJumatWeekOffset = Math.round(diffTime / (1000 * 60 * 60 * 24 * 7));
+
             renderJumatPeriod();
             closeJumatAddModal();
+            alert("Transaksi Jumat Berhasil Disimpan!");
+        }
+
+        function openJumatEditModal(index) {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            const weekData = masterDatabase.jumat[rangeInfo.key];
+            const tx = weekData.listTx[index];
+
+            document.getElementById('editJumatIndex').value = index;
+            document.getElementById('editJumatType').value = tx.type;
+            document.getElementById('editJumatTgl').value = tx.rawDate || new Date().toISOString().split('T')[0];
+            document.getElementById('editJumatKet').value = tx.ket;
+            document.getElementById('editJumatNominal').value = tx.nominal;
+
+            document.getElementById('jumatEditModal').classList.remove('hidden');
+        }
+        function closeJumatEditModal() { document.getElementById('jumatEditModal').classList.add('hidden'); }
+
+        function saveJumatEditTransaction() {
+            const index = document.getElementById('editJumatIndex').value;
+            const type = document.getElementById('editJumatType').value;
+            const rawDate = document.getElementById('editJumatTgl').value;
+            const ket = document.getElementById('editJumatKet').value;
+            const nominal = Number(document.getElementById('editJumatNominal').value) || 0;
+
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            const weekData = masterDatabase.jumat[rangeInfo.key];
+
+            const inputDateObj = new Date(rawDate);
+            const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+            const formattedTgl = `${inputDateObj.getDate()} ${monthsList[inputDateObj.getMonth()]}`;
+
+            weekData.listTx[index] = {
+                rawDate: rawDate,
+                tgl: formattedTgl,
+                ket,
+                type,
+                nominal
+            };
+
+            syncToCloud(masterDatabase);
+            renderJumatPeriod();
+            closeJumatEditModal();
         }
 
         function deleteJumatTx(index) {
-            if (confirm("Hapus baris transaksi pekanan ini?")) {
+            if (confirm("Apakah Anda yakin ingin menghapus transaksi pekanan ini?")) {
                 const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
                 masterDatabase.jumat[rangeInfo.key].listTx.splice(index, 1);
                 syncToCloud(masterDatabase);
@@ -1267,7 +1425,89 @@
             }
         }
 
-        // --- EXPORT PDF KHUSUS LAPORAN PEKAN JUMAT ---
+        // --- UPLOAD EXCEL LAPORAN PEKAN JUMAT ---
+        function handleJumatExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, {header: 1});
+
+                let saldoAwal = 0;
+                let listTx = [];
+                let sampleDate = null;
+
+                rows.forEach(row => {
+                    if (!row || !row.length) return;
+                    let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
+
+                    // 1. Ekstrak Saldo Awal Pekan
+                    if (rowStr.includes("saldo awal")) {
+                        row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) saldoAwal = cell; });
+                    }
+
+                    // 2. Ekstrak Baris Transaksi (No, Tanggal, Keterangan, Masuk, Keluar)
+                    if (rowStr.includes("no") && rowStr.includes("tanggal")) return;
+                    if (rowStr.includes("total pekan") || rowStr.includes("ringkasan")) return;
+
+                    let tglStr = "", ket = "", masuk = 0, keluar = 0;
+
+                    row.forEach(cell => {
+                        if (!cell) return;
+                        let cStr = String(cell).trim();
+                        if (cStr.includes("2024") || cStr.includes("2025") || cStr.includes("2026") || cStr.includes("2027")) {
+                            tglStr = cStr;
+                            if (!sampleDate) sampleDate = new Date(cStr);
+                        } else if (typeof cell === 'number' && Math.abs(cell) > 100) {
+                            if (!masuk && row.indexOf(cell) === 3) masuk = cell;
+                            else if (!keluar) keluar = cell;
+                        } else if (cStr.length > 2 && !ket && !cStr.toLowerCase().includes("semarang") && !cStr.toLowerCase().includes("takmir")) {
+                            ket = cStr;
+                        }
+                    });
+
+                    if (ket && (masuk || keluar)) {
+                        let txDate = sampleDate || new Date();
+                        const monthsList = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+                        let dateObj = new Date(tglStr || txDate);
+                        let formattedTgl = `${dateObj.getDate()} ${monthsList[dateObj.getMonth()]}`;
+
+                        if (masuk > 0) {
+                            listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'masuk', nominal: masuk });
+                        }
+                        if (keluar > 0) {
+                            listTx.push({ rawDate: tglStr, tgl: formattedTgl, ket: ket, type: 'keluar', nominal: keluar });
+                        }
+                    }
+                });
+
+                const targetDate = sampleDate || new Date();
+                const targetWeek = getJumatRangeKeyFromDate(targetDate);
+
+                if (!masterDatabase.jumat) masterDatabase.jumat = {};
+                masterDatabase.jumat[targetWeek.key] = {
+                    saldoAwal: Number(saldoAwal) || 4329440,
+                    listTx: listTx
+                };
+
+                syncToCloud(masterDatabase);
+
+                // Auto Pindah Kartu Pekan
+                const todayWeek = getJumatRangeKey(0);
+                const diffTime = targetWeek.jumatObj - todayWeek.jumatObj;
+                currentJumatWeekOffset = Math.round(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+                renderJumatPeriod();
+                alert(`Laporan Pekan Jumat Berhasil Di-upload! (Periode ${targetWeek.label})`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- EXPORT PDF JUMAT REAL-TIME DATE & DINAMIS NAMA TAKMIR/BENDAHARA ---
         function exportJumatPDF() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) {
@@ -1337,14 +1577,20 @@
             let finalY = doc.lastAutoTable.finalY + 15;
             if (finalY > 240) { doc.addPage(); finalY = 20; }
 
+            // Tanggal Cetak Real-Time (Hari ini saat didownload)
+            const now = new Date();
+            const monthsFull = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const realDateStr = `Semarang, ${now.getDate()} ${monthsFull[now.getMonth()]} ${now.getFullYear()}`;
+
             doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
             doc.text("Ketua Takmir,", 14, finalY);
-            doc.text("Semarang, 2 November 2026", 140, finalY);
+            doc.text(realDateStr, 140, finalY);
             doc.text("Bendahara,", 140, finalY + 5);
 
             doc.setFont("helvetica", "bold");
-            doc.text("( Fadlan Zaenuri, S.H )", 14, finalY + 20);
-            doc.text("( Aditya Budi Santoso, M.Ag )", 140, finalY + 20);
+            doc.text(`( ${getTakmirName()} )`, 14, finalY + 20);
+            doc.text(`( ${getBendaharaName()} )`, 140, finalY + 20);
 
             doc.save(`Laporan_Jumat_Masjid_Baitul_Jannah.pdf`);
         }
