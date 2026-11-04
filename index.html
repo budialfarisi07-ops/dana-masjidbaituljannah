@@ -1101,6 +1101,7 @@
         }
 
        // 2. EXPORT TO PDF (.PDF)
+       // 2. EXPORT TO PDF (.PDF) - DENGAN TANDA TANGAN TAKMIR & BENDAHARA DINAMIS
         function exportToPDF() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -1170,7 +1171,7 @@
                 head: [["Komposisi Saldo per Akad", "Jumlah (Rp)"]],
                 body: rincianAkadData,
                 theme: 'striped',
-                headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' }, // Warna ungu membedakan dari saldo utama
+                headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' }, // Warna ungu
                 styles: { fontSize: 8.5, cellPadding: 2 },
                 columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
             });
@@ -1226,6 +1227,28 @@
                 styles: { fontSize: 8.5, cellPadding: 2 },
                 columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } }
             });
+
+            // --- TANDA TANGAN DINAMIS TAKMIR & BENDAHARA ---
+            let finalY = doc.lastAutoTable.finalY + 15;
+            if (finalY > 240) { 
+                doc.addPage(); 
+                finalY = 20; 
+            }
+
+            const now = new Date();
+            const monthsFull = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const realDateStr = `Semarang, ${now.getDate()} ${monthsFull[now.getMonth()]} ${now.getFullYear()}`;
+
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(0);
+            doc.text("Ketua Takmir,", 14, finalY);
+            doc.text(realDateStr, 140, finalY);
+            doc.text("Bendahara,", 140, finalY + 5);
+
+            doc.setFont("helvetica", "bold");
+            doc.text(`( ${getTakmirName()} )`, 14, finalY + 20);
+            doc.text(`( ${getBendaharaName()} )`, 140, finalY + 20);
 
             doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
         }
