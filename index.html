@@ -587,7 +587,8 @@
         }
 
         // --- AUTH & ADMIN PANEL ---
-    function checkAdminSession() {
+    // ✅ FUNGSI KONTROL MODE ADMIN & PUBLIK PRESISI
+        function checkAdminSession() {
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
             const colActions = document.querySelectorAll('.col-action');
 
@@ -601,7 +602,7 @@
                     const jumatCtrl = document.getElementById('jumatAdminControls');
                     if (jumatCtrl) {
                         jumatCtrl.classList.remove('hidden');
-                        jumatCtrl.style.display = 'flex';
+                        jumatCtrl.style.display = 'flex'; // Tampilkan hanya saat Admin di Mode Jumat
                     }
                     
                     const jumatDrop = document.getElementById('jumatDropZoneContainer');
@@ -610,7 +611,10 @@
                     document.getElementById('adminPanel').classList.remove('hidden');
                     
                     const jumatCtrl = document.getElementById('jumatAdminControls');
-                    if (jumatCtrl) jumatCtrl.classList.add('hidden');
+                    if (jumatCtrl) {
+                        jumatCtrl.classList.add('hidden');
+                        jumatCtrl.style.display = 'none';
+                    }
                     
                     const jumatDrop = document.getElementById('jumatDropZoneContainer');
                     if (jumatDrop) jumatDrop.classList.add('hidden');
@@ -618,12 +622,16 @@
 
                 colActions.forEach(el => el.classList.remove('hidden'));
             } else {
+                // --- MODE PUBLIK (SEMUA PANEL & TOMBOL UPLOAD/HAPUS ADMIN DISEMBUNYIKAN) ---
                 document.getElementById('btnLogin').classList.remove('hidden');
                 document.getElementById('adminBadge').classList.add('hidden');
                 document.getElementById('adminPanel').classList.add('hidden');
                 
                 const jumatCtrl = document.getElementById('jumatAdminControls');
-                if (jumatCtrl) jumatCtrl.classList.add('hidden');
+                if (jumatCtrl) {
+                    jumatCtrl.classList.add('hidden');
+                    jumatCtrl.style.display = 'none'; // Sembunyikan total di mode publik
+                }
                 
                 const jumatDrop = document.getElementById('jumatDropZoneContainer');
                 if (jumatDrop) jumatDrop.classList.add('hidden');
