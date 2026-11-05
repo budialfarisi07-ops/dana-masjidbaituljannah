@@ -134,13 +134,43 @@
                         <p id="jumatSaldoAkhir" class="text-sm sm:text-base font-extrabold mt-1">Rp 0</p>
                     </div>
                 </div>
-
+                
+                <!-- ✅ KARTU RINCIAN SALDO AKHIR PER AKAD (KHUSUS PEKAN JUMAT) -->
+                <div class="bg-white rounded-xl border border-emerald-200 p-4 mb-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo Akhir per Akad / Dana (Pekan Ini)
+                        </p>
+                    </div>
+                    <div id="containerJumatAkad" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg text-xs text-slate-400 italic">
+                            Belum ada rincian akad untuk pekan ini
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
                 <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
                     <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
                         <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Input Manual
                         </button>
+                        <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
+                        <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Input Manual
+                        </button>
+                        <!-- 📌 TOMBOL BARU: ATUR RINCIAN SALDO PER AKAD JUMAT -->
+                        <button onclick="openJumatAkadModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-wallet"></i> Atur Rincian Saldo
+                        </button>
+                        <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
+                            <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
+                        </label>
+                        <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
+                        </button>
+                    </div>
                         <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
                             <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
@@ -487,6 +517,37 @@
             <div class="flex gap-2">
                 <button onclick="closeJumatEditModal()" class="w-1/2 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-lg">Batal</button>
                 <button onclick="saveJumatEditTransaction()" class="w-1/2 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+    <!-- ✅ MODAL INPUT MANUAL RINCIAN SALDO AKAD PEKAN JUMAT -->
+    <div id="jumatAkadModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-purple-600"></i> Kelola Rincian Saldo Akad Pekan Ini
+                </h3>
+                <button onclick="closeJumatAkadModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <p class="text-xs text-slate-500 mb-3">Tambahkan item jenis infak dan nominal saldo akhirnya secara manual untuk pekan ini.</p>
+
+            <!-- Form Tambah Row -->
+            <div class="flex gap-2 mb-4 bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <input type="text" id="inputNamaAkadJumat" placeholder="Jenis Infak (mis: Infak Umum)" class="w-1/2 border border-slate-300 p-2 rounded-lg text-xs">
+                <input type="number" id="inputNominalAkadJumat" placeholder="Nominal (Rp)" class="w-1/2 border border-slate-300 p-2 rounded-lg text-xs font-mono">
+                <button onclick="addJumatAkadRow()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">
+                    <i class="fa-solid fa-plus"></i> Tambah
+                </button>
+            </div>
+
+            <!-- List Item Rincian yang Sudah Ditambahkan -->
+            <div class="max-h-56 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl mb-4 p-2 bg-slate-50" id="listJumatAkadItems">
+                <!-- Diisi via JS -->
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button onclick="closeJumatAkadModal()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-lg hover:bg-emerald-800 shadow">Selesai & Simpan</button>
             </div>
         </div>
     </div>
@@ -1382,7 +1443,7 @@
             return getJumatRangeKeyFromDate(now);
         }
 
-        function renderJumatPeriod() {
+function renderJumatPeriod() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             document.getElementById('txtJumatRange').innerText = rangeInfo.label;
             
@@ -1391,7 +1452,8 @@
             if (!masterDatabase.jumat) masterDatabase.jumat = {};
             const weekData = masterDatabase.jumat[rangeInfo.key] || {
                 saldoAwal: 0,
-                listTx: []
+                listTx: [],
+                rincianAkad: []
             };
 
             let totalMasuk = 0;
@@ -1429,6 +1491,26 @@
                 `).join('');
             } else {
                 tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>`;
+            }
+
+            // ✅ RENDER KARTU RINCIAN SALDO AKHIR PER AKAD PEKAN JUMAT
+            const containerAkad = document.getElementById('containerJumatAkad');
+            if (containerAkad) {
+                const listAkad = weekData.rincianAkad || [];
+                if (listAkad.length > 0) {
+                    containerAkad.innerHTML = listAkad.map(item => `
+                        <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-700">${item.nama}</span>
+                            <span class="text-sm font-bold text-emerald-600">${formatRp(item.nominal)}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    containerAkad.innerHTML = `
+                        <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg text-xs text-slate-400 italic sm:col-span-2">
+                            Belum ada rincian akad untuk pekan ini
+                        </div>
+                    `;
+                }
             }
 
             checkAdminSession();
@@ -1683,6 +1765,89 @@
                 }, false);
             }
         });
+        
+        // ==========================================
+        // ✅ FUNGSI KELOLA RINCIAN SALDO AKAD PEKAN JUMAT (MANUAL INPUT)
+        // ==========================================
+        function openJumatAkadModal() {
+            renderJumatAkadModalList();
+            document.getElementById('jumatAkadModal').classList.remove('hidden');
+        }
+
+        function closeJumatAkadModal() {
+            document.getElementById('jumatAkadModal').classList.add('hidden');
+        }
+
+        function renderJumatAkadModalList() {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat) masterDatabase.jumat = {};
+            if (!masterDatabase.jumat[rangeInfo.key]) {
+                masterDatabase.jumat[rangeInfo.key] = { saldoAwal: 0, listTx: [], rincianAkad: [] };
+            }
+
+            const listAkad = masterDatabase.jumat[rangeInfo.key].rincianAkad || [];
+            const container = document.getElementById('listJumatAkadItems');
+
+            if (listAkad.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Belum ada jenis infak ditambahkan</p>`;
+                return;
+            }
+
+            container.innerHTML = listAkad.map((item, idx) => `
+                <div class="flex justify-between items-center py-2 px-1">
+                    <div>
+                        <p class="text-xs font-bold text-slate-700">${item.nama}</p>
+                        <p class="text-[11px] font-semibold text-emerald-600">${formatRp(item.nominal)}</p>
+                    </div>
+                    <button onclick="deleteJumatAkadRow(${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold px-2 py-1">
+                        <i class="fa-solid fa-trash"></i> Hapus
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addJumatAkadRow() {
+            const namaEl = document.getElementById('inputNamaAkadJumat');
+            const nominalEl = document.getElementById('inputNominalAkadJumat');
+
+            const nama = namaEl.value.trim();
+            const nominal = Number(nominalEl.value) || 0;
+
+            if (!nama) {
+                alert("Harap masukkan Jenis Infak!");
+                return;
+            }
+
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat) masterDatabase.jumat = {};
+            if (!masterDatabase.jumat[rangeInfo.key]) {
+                masterDatabase.jumat[rangeInfo.key] = { saldoAwal: 0, listTx: [], rincianAkad: [] };
+            }
+            if (!masterDatabase.jumat[rangeInfo.key].rincianAkad) {
+                masterDatabase.jumat[rangeInfo.key].rincianAkad = [];
+            }
+
+            masterDatabase.jumat[rangeInfo.key].rincianAkad.push({ nama, nominal });
+
+            syncToCloud(masterDatabase);
+            renderJumatPeriod();
+            renderJumatAkadModalList();
+
+            namaEl.value = "";
+            nominalEl.value = "";
+        }
+
+        function deleteJumatAkadRow(idx) {
+            const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
+            if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key] || !masterDatabase.jumat[rangeInfo.key].rincianAkad) return;
+
+            masterDatabase.jumat[rangeInfo.key].rincianAkad.splice(idx, 1);
+
+            syncToCloud(masterDatabase);
+            renderJumatPeriod();
+            renderJumatAkadModalList();
+        }
+
         // --- EXPORT PDF JUMAT REAL-TIME DATE & DINAMIS NAMA TAKMIR/BENDAHARA ---
         function exportJumatPDF() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
