@@ -152,39 +152,29 @@
                 <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
                 <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
                     <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
+                        <!-- 1. Tombol Tambah Transaksi Tabel -->
                         <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Input Manual
                         </button>
-                        <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
-                        <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> Input Manual
-                        </button>
-                        <!-- 📌 TOMBOL BARU: ATUR RINCIAN SALDO PER AKAD JUMAT -->
+                        <!-- 2. Tombol Input Manual Rincian Saldo Akhir (WARNA UNGU) -->
                         <button onclick="openJumatAkadModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-wallet"></i> Atur Rincian Saldo
                         </button>
+                        <!-- 3. Tombol Upload Excel Jumat -->
                         <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
                             <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
                         </label>
+                        <!-- 4. Tombol Hapus Data Pekan Ini -->
                         <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
                             <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
                         </button>
                     </div>
-                        <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
-                            <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
-                            <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
-                        </label>
-                        <!-- 📌 TOMBOL BARU HAPUS SEMUA DATA PEKAN INI -->
-                        <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
-                        </button>
-                    </div>
+                    <!-- Tombol Unduh PDF -->
                     <button onclick="exportJumatPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow flex items-center gap-1.5 ml-auto">
                         <i class="fa-solid fa-file-pdf"></i> Unduh PDF Laporan Jumat
                     </button>
                 </div>
-            </div>
 
             <!-- Tabel Detail Transaksi Pekan Ini -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
@@ -1935,19 +1925,10 @@ function renderJumatPeriod() {
 
             doc.save(`Laporan_Jumat_Masjid_Baitul_Jannah.pdf`);
         }
-        // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
+        // --- INISIALISASI UTAMA ---
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
             fetchCloudData();
-            
-            // Event Listener khusus Drag & Drop Jumat
-        document.addEventListener("DOMContentLoaded", () => {
-            const jumatDrop = document.getElementById('jumatDropZoneContainer');
-            const jumatInput = document.getElementById('jumatFileInput');
-            if (jumatDrop && jumatInput) {
-                jumatDrop.addEventListener('click', () => jumatInput.click());
-            }
-        });
         });
         
     </script>
