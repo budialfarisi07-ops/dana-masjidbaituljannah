@@ -871,18 +871,48 @@
             let totalMasuk = totalPemasukanExcel || calcMasuk;
             let totalKeluar = totalPengeluaranExcel || calcKeluar;
 
-            let sisaUmum = infakUmumSisa;
-            let sisaYatim = infakYatimSisa;
+            // Hitung total saldo akhir aktual dari Saldo Awal + Total Masuk - Total Keluar
+            let hitungSaldoAkhir = Number(saldoAwal) + totalMasuk - totalKeluar;
 
-            if(!sisaUmum && !sisaYatim) {
-                let hitungSisa = Number(saldoAwal) + totalMasuk - totalKeluar;
-                sisaUmum = Math.round(hitungSisa * 0.8);
-                sisaYatim = hitungSisa - sisaUmum;
-            }
+            // Hitung ulang saldo per akad secara proporsional agar kartu ringkasan otomatis sinkron
+            let sisaUmum = 0;
+            let sisaYatim = 0;
+
+            // Hitung kontribusi pemasukan per akad dari listPemasukan
+            let masukUmum = listPemasukan.filter(i => (i.akad || '').toLowerCase().includes('umum')).reduce((sum, i) => sum + Number(i.nominal), 0);
+            let masukYatim = listPemasukan.filter(i => (i.akad || '').toLowerCase().includes('yatim')).reduce((sum, i) => sum + Number(i.nominal), 0);
             
-            let saldoAkhir = Number(sisaUmum) + Number(sisaYatim);
+            // Hitung pengeluaran per akad dari listPengeluaran
+            let keluarUmum = listPengeluaran.filter(i => (i.akad || '').toLowerCase().includes('umum')).reduce((sum, i) => sum + Number(i.nominal), 0);
+            let keluarYatim = listPengeluaran.filter(i => (i.akad || '').toLowerCase().includes('yatim')).reduce((sum, i) => sum + Number(i.nominal), 0);
 
-            if(!masterDatabase[yr]) masterDatabase[yr] = {};
+            if (masukUmum > 0 || masukYatim > 0 || keluarUmum > 0 || keluarYatim > 0) {
+                // Selisih per akad
+                let nettoUmum = masukUmum - keluarUmum;
+                let nettoYatim = masukYatim - keluarYatim;
+                
+                // Jika ada sisa bawaan lama dari excel, sesuaikan dengan perubahan netto baru
+                if (infakUmumSisa || infakYatimSisa) {
+                    sisaUmum = Number(infakUmumSisa);
+                    sisaYatim = Number(infakYatimSisa);
+                } else {
+                    sisaUmum = Math.round(hitungSaldoAkhir * 0.8);
+                    sisaYatim = hitungSaldoAkhir - sisaUmum;
+                }
+            } else {
+                sisaUmum = infakUmumSisa || Math.round(hitungSaldoAkhir * 0.8);
+                sisaYatim = infakYatimSisa || (hitungSaldoAkhir - sisaUmum);
+            }
+
+            // Pastikan total gabungan sisa akad selalu tepat sama dengan Total Saldo Akhir
+            let saldoAkhir = Number(sisaUmum) + Number(sisaYatim);
+            if (saldoAkhir !== hitungSaldoAkhir) {
+                let selisih = hitungSaldoAkhir - saldoAkhir;
+                sisaUmum += selisih; // Masukkan penyesuaian ke Infak Umum
+                saldoAkhir = hitungSaldoAkhir;
+            }
+
+            if (!masterDatabase[yr]) masterDatabase[yr] = {};
 
             masterDatabase[yr][mo] = {
                 fileName: fileName || "Data Disimpan Admin",
@@ -898,7 +928,6 @@
 
             syncToCloud(masterDatabase);
             renderCurrentPeriod();
-            alert(`Laporan Periode ${mo} ${yr} Berhasil Di-upload ke Google Sheets!`);
         }
 
         function renderCurrentPeriod() {
@@ -1029,8 +1058,22 @@
             let newTotalMasuk = data.listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
             let newTotalKeluar = data.listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
 
-            savePeriodData(yr, mo, data.fileName, data.saldoAwal, newTotalMasuk, newTotalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
+            // Hitung selisih perubahan dari data lama ke data baru untuk memperbarui saldo akad
+            let oldNominal = (type === 'pemasukan') ? Number(data.listPemasukan[index]?.nominal || 0) : Number(data.listPengeluaran[index]?.nominal || 0);
+            let diff = updatedItem.nominal - oldNominal;
+
+            let updatedSisaUmum = Number(data.infakUmumSisa) || 0;
+            let updatedSisaYatim = Number(data.infakYatimSisa) || 0;
+
+            if (updatedItem.akad.toLowerCase().includes('yatim')) {
+                updatedSisaYatim += (type === 'pemasukan') ? diff : -diff;
+            } else {
+                updatedSisaUmum += (type === 'pemasukan') ? diff : -diff;
+            }
+
+            savePeriodData(yr, mo, data.fileName, data.saldoAwal, newTotalMasuk, newTotalKeluar, updatedSisaUmum, updatedSisaYatim, data.listPemasukan, data.listPengeluaran);
             closeEditModal();
+            alert("Transaksi berhasil diperbarui dan kartu ringkasan telah disinkronkan!");
         }
 
         function deleteTransaction(type, index) {
@@ -1038,6 +1081,8 @@
                 const yr = document.getElementById('selectYear').value;
                 const mo = document.getElementById('selectMonth').value;
                 const data = masterDatabase[yr][mo];
+
+                let deletedItem = (type === 'pemasukan') ? data.listPemasukan[index] : data.listPengeluaran[index];
 
                 if (type === 'pemasukan') {
                     data.listPemasukan.splice(index, 1);
@@ -1048,10 +1093,20 @@
                 let newTotalMasuk = data.listPemasukan.reduce((sum, i) => sum + Number(i.nominal), 0);
                 let newTotalKeluar = data.listPengeluaran.reduce((sum, i) => sum + Number(i.nominal), 0);
 
-                savePeriodData(yr, mo, data.fileName, data.saldoAwal, newTotalMasuk, newTotalKeluar, data.infakUmumSisa, data.infakYatimSisa, data.listPemasukan, data.listPengeluaran);
+                // Kurangi/Tambah saldo per akad sesuai transaksi yang dihapus
+                let updatedSisaUmum = Number(data.infakUmumSisa) || 0;
+                let updatedSisaYatim = Number(data.infakYatimSisa) || 0;
+                let deletedNominal = Number(deletedItem.nominal) || 0;
+
+                if ((deletedItem.akad || '').toLowerCase().includes('yatim')) {
+                    updatedSisaYatim += (type === 'pemasukan') ? -deletedNominal : deletedNominal;
+                } else {
+                    updatedSisaUmum += (type === 'pemasukan') ? -deletedNominal : deletedNominal;
+                }
+
+                savePeriodData(yr, mo, data.fileName, data.saldoAwal, newTotalMasuk, newTotalKeluar, updatedSisaUmum, updatedSisaYatim, data.listPemasukan, data.listPengeluaran);
             }
         }
-
         function resetCurrentPeriod() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
