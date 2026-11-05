@@ -1768,6 +1768,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
+            // Header Kop Dokumen PDF
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
             doc.text("MASJID BAITUL JANNAH", 14, 15);
@@ -1790,6 +1791,7 @@
             });
             let saldoAkhir = Number(weekData.saldoAwal) + totalMasuk - totalKeluar;
 
+            // TABEL 1: Ringkasan Kas Utama Pekan Ini
             doc.autoTable({
                 startY: 37,
                 head: [["Saldo Awal", "Total Pemasukan", "Total Pengeluaran", "Saldo Akhir"]],
@@ -1799,6 +1801,39 @@
                 bodyStyles: { halign: 'center', fontStyle: 'bold' }
             });
 
+            let currentY = doc.lastAutoTable.finalY + 6;
+
+            // TABEL 2 (BARU): Rincian Saldo Akhir per Akad / Dana Pekan Ini
+            const listAkad = weekData.rincianAkad || [];
+            if (listAkad.length > 0) {
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(109, 40, 217); // Warna Ungu Presisi
+                doc.text("RINCIAN SALDO AKHIR PER AKAD / DANA", 14, currentY);
+
+                const akadBody = listAkad.map(a => [a.nama, formatRp(a.nominal)]);
+
+                doc.autoTable({
+                    startY: currentY + 3,
+                    head: [["Jenis Infak / Akad / Dana", "Saldo Akhir (Rp)"]],
+                    body: akadBody,
+                    theme: 'striped',
+                    headStyles: { fillColor: [124, 58, 237], textColor: 255 }, // Header Ungu
+                    columnStyles: {
+                        0: { fontStyle: 'bold' },
+                        1: { halign: 'right', fontStyle: 'bold' }
+                    }
+                });
+
+                currentY = doc.lastAutoTable.finalY + 6;
+            }
+
+            // TABEL 3: Rincian Detail Transaksi Pekan Ini
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(51, 65, 85);
+            doc.text("DETAIL TRANSAKSI PEKAN INI", 14, currentY);
+
             const txBody = (weekData.listTx || []).map((tx, idx) => [
                 idx + 1,
                 tx.tgl,
@@ -1807,22 +1842,23 @@
                 tx.type === 'keluar' ? formatRp(tx.nominal) : ""
             ]);
 
-            txBody.push(["", "", "TOTAL PEKAN", formatRp(totalMasuk), formatRp(totalKeluar)]);
+            txBody.push(["", "", "TOTAL PEKAN INI", formatRp(totalMasuk), formatRp(totalKeluar)]);
 
             doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 6,
-                head: [["No", "Tanggal", "Keterangan", "Masuk", "Keluar"]],
+                startY: currentY + 3,
+                head: [["No", "Tanggal", "Keterangan Transaksi", "Masuk", "Keluar"]],
                 body: txBody,
                 theme: 'grid',
                 headStyles: { fillColor: [71, 85, 105], textColor: 255 },
                 columnStyles: {
                     0: { halign: 'center', cellWidth: 12 },
                     1: { cellWidth: 28 },
-                    3: { halign: 'right' },
-                    4: { halign: 'right' }
+                    3: { halign: 'right', fontStyle: 'bold' },
+                    4: { halign: 'right', fontStyle: 'bold' }
                 }
             });
 
+            // Tanda Tangan Takmir & Bendahara Dinamis
             let finalY = doc.lastAutoTable.finalY + 15;
             if (finalY > 240) { doc.addPage(); finalY = 20; }
 
@@ -1832,6 +1868,7 @@
 
             doc.setFontSize(9);
             doc.setFont("helvetica", "normal");
+            doc.setTextColor(0);
             doc.text("Ketua Takmir,", 14, finalY);
             doc.text(realDateStr, 140, finalY);
             doc.text("Bendahara,", 140, finalY + 5);
