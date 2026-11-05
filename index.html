@@ -256,7 +256,7 @@
         </div>
 
         <!-- Ringkasan Kas Utama -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div class="monthly-section grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                 <p class="text-[11px] text-slate-500 font-medium">Saldo Awal</p>
                 <p id="txtSaldoAwal" class="text-sm sm:text-base font-bold text-slate-700 mt-1">Rp 0</p>
@@ -276,7 +276,7 @@
         </div>
 
         <!-- Rincian Saldo per Akad / Dana -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+        <div class="monthly-section bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
             <p class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5">
                 <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo Akhir per Akad / Dana
             </p>
@@ -293,7 +293,7 @@
         </div>
 
         <!-- Tabel Transaksi Pemasukan -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+        <div class="monthly-section bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
             <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 font-bold text-emerald-800 text-sm flex justify-between items-center">
                 <span><i class="fa-solid fa-arrow-down text-emerald-600 mr-1.5"></i> Transaksi Pemasukan</span>
             </div>
@@ -316,7 +316,7 @@
         </div>
 
         <!-- Tabel Transaksi Pengeluaran -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+        <div class="monthly-section bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
             <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 font-bold text-rose-800 text-sm flex justify-between items-center">
                 <span><i class="fa-solid fa-arrow-up text-rose-600 mr-1.5"></i> Transaksi Pengeluaran Operasional</span>
             </div>
@@ -1362,30 +1362,31 @@
             const secJ = document.getElementById('sectionJumat');
             const filterContainer = document.getElementById('filterPeriodContainer');
 
+            // Ambil semua elemen pembungkus laporan bulanan utama
+            const bulananElements = document.querySelectorAll('.monthly-section');
+
             if (mode === 'jumat') {
                 btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                
                 secJ.classList.remove('hidden');
-                
-                // Sembunyikan panel admin bulanan & filter dropdown periode bulanan
-                document.getElementById('adminPanel').classList.add('hidden');
                 if (filterContainer) filterContainer.classList.add('hidden');
+                document.getElementById('adminPanel').classList.add('hidden');
                 
-                // Sembunyikan semua elemen dashboard laporan bulanan
-                document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
+                // Sembunyikan hanya elemen laporan bulanan
+                bulananElements.forEach(el => el.classList.add('hidden'));
                 
                 renderJumatPeriod();
                 checkAdminSession();
             } else {
                 btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
-                secJ.classList.add('hidden');
                 
-                // Tampilkan kembali filter dropdown periode bulanan
+                secJ.classList.add('hidden');
                 if (filterContainer) filterContainer.classList.remove('hidden');
                 
-                // Tampilkan kembali elemen dashboard laporan bulanan
-                document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
+                // Tampilkan kembali elemen laporan bulanan
+                bulananElements.forEach(el => el.classList.remove('hidden'));
                 
                 checkAdminSession();
                 renderCurrentPeriod();
@@ -1926,19 +1927,10 @@ function renderJumatPeriod() {
 
             doc.save(`Laporan_Jumat_Masjid_Baitul_Jannah.pdf`);
         }
-        // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
+        // --- INISIALISASI UTAMA ---
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
             fetchCloudData();
-            
-            // Event Listener khusus Drag & Drop Jumat
-        document.addEventListener("DOMContentLoaded", () => {
-            const jumatDrop = document.getElementById('jumatDropZoneContainer');
-            const jumatInput = document.getElementById('jumatFileInput');
-            if (jumatDrop && jumatInput) {
-                jumatDrop.addEventListener('click', () => jumatInput.click());
-            }
-        });
         });
         
     </script>
