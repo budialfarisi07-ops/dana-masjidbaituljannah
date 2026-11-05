@@ -149,28 +149,23 @@
                     </div>
                 </div>
                 
-                <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
+               <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
                 <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
                     <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
-                        <!-- 1. Tombol Tambah Transaksi Tabel -->
                         <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Input Manual
                         </button>
-                        <!-- 2. Tombol Input Manual Rincian Saldo Akhir (WARNA UNGU) -->
                         <button onclick="openJumatAkadModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-wallet"></i> Atur Rincian Saldo
                         </button>
-                        <!-- 3. Tombol Upload Excel Jumat -->
                         <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
                             <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
                         </label>
-                        <!-- 4. Tombol Hapus Data Pekan Ini -->
                         <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
                             <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
                         </button>
                     </div>
-                    <!-- Tombol Unduh PDF -->
                     <button onclick="exportJumatPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow flex items-center gap-1.5 ml-auto">
                         <i class="fa-solid fa-file-pdf"></i> Unduh PDF Laporan Jumat
                     </button>
@@ -1353,8 +1348,7 @@
             renderJumatPeriod();
         }
 
-        // ✅ FUNGSI NAVIGASI TAB MODUL LAPORAN (SEMBUNYIKAN FILTER DI MODE JUMAT)
-        function switchMode(mode) {
+   function switchMode(mode) {
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
@@ -1364,33 +1358,35 @@
             if (mode === 'jumat') {
                 btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                
                 secJ.classList.remove('hidden');
-                
-                // Sembunyikan panel admin bulanan & filter dropdown periode bulanan
-                document.getElementById('adminPanel').classList.add('hidden');
                 if (filterContainer) filterContainer.classList.add('hidden');
+                document.getElementById('adminPanel').classList.add('hidden');
                 
-                // Sembunyikan semua elemen dashboard laporan bulanan
-                document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
+                // Sembunyikan elemen bulanan secara eksplisit tanpa mengganggu komponen lain
+                document.querySelectorAll('#filterPeriodContainer, main > div.grid, main > div.bg-white').forEach(el => {
+                    if (el.id !== 'sectionJumat') el.classList.add('hidden');
+                });
                 
                 renderJumatPeriod();
                 checkAdminSession();
             } else {
                 btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
-                secJ.classList.add('hidden');
                 
-                // Tampilkan kembali filter dropdown periode bulanan
+                secJ.classList.add('hidden');
                 if (filterContainer) filterContainer.classList.remove('hidden');
                 
-                // Tampilkan kembali elemen dashboard laporan bulanan
-                document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
+                // Tampilkan kembali elemen bulanan
+                document.querySelectorAll('main > div.grid, main > div.bg-white').forEach(el => {
+                    if (el.id !== 'sectionJumat') el.classList.remove('hidden');
+                });
                 
                 checkAdminSession();
                 renderCurrentPeriod();
             }
         }
-
+        
         // 2. Perhitungan Matematika Pekan Jumat (Jumat s/d Kamis)
         function getJumatRangeKeyFromDate(dInput) {
             let date = new Date();
