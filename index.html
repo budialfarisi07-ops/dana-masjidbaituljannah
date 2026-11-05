@@ -208,7 +208,8 @@
                 </div>
             </div>
         </div>
-      <!-- ✅ PERBAIKAN: TAMBAH ID KONTAINER FILTER -->
+            
+         <div id="sectionBulanan">
         <!-- FILTER DROPDOWN PERIODE -->
         <div id="filterPeriodContainer" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
             <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -337,7 +338,7 @@
                 </table>
             </div>
         </div>
-
+        </div>   
     </main>
 
     <!-- Modal Login Admin -->
@@ -1359,22 +1360,17 @@
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
+            const secB = document.getElementById('sectionBulanan');
             const secJ = document.getElementById('sectionJumat');
-            const filterContainer = document.getElementById('filterPeriodContainer');
-
-            // Ambil semua elemen pembungkus laporan bulanan utama
-            const bulananElements = document.querySelectorAll('.monthly-section');
 
             if (mode === 'jumat') {
                 btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 
-                secJ.classList.remove('hidden');
-                if (filterContainer) filterContainer.classList.add('hidden');
-                document.getElementById('adminPanel').classList.add('hidden');
+                if (secB) secB.classList.add('hidden');
+                if (secJ) secJ.classList.remove('hidden');
                 
-                // Sembunyikan hanya elemen laporan bulanan
-                bulananElements.forEach(el => el.classList.add('hidden'));
+                document.getElementById('adminPanel').classList.add('hidden');
                 
                 renderJumatPeriod();
                 checkAdminSession();
@@ -1382,11 +1378,8 @@
                 btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
                 
-                secJ.classList.add('hidden');
-                if (filterContainer) filterContainer.classList.remove('hidden');
-                
-                // Tampilkan kembali elemen laporan bulanan
-                bulananElements.forEach(el => el.classList.remove('hidden'));
+                if (secJ) secJ.classList.add('hidden');
+                if (secB) secB.classList.remove('hidden');
                 
                 checkAdminSession();
                 renderCurrentPeriod();
