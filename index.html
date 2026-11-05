@@ -150,32 +150,41 @@
                 </div>
                 
                 <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
-               <!-- ✅ TOMBOL AKSI ADMIN & UPLOAD EXCEL PEKAN JUMAT (RAPI & CLEAN) -->
                 <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
                     <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
-                        <!-- 1. Tombol Tambah Transaksi Tabel -->
                         <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Input Manual
                         </button>
-                        <!-- 2. Tombol Kelola Rincian Saldo Akad (BARU) -->
+                        <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
+                        <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Input Manual
+                        </button>
+                        <!-- 📌 TOMBOL BARU: ATUR RINCIAN SALDO PER AKAD JUMAT -->
                         <button onclick="openJumatAkadModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
                             <i class="fa-solid fa-wallet"></i> Atur Rincian Saldo
                         </button>
-                        <!-- 3. Tombol Upload Excel Jumat -->
                         <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
                             <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
                             <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
                         </label>
-                        <!-- 4. Tombol Hapus Data Pekan Ini -->
                         <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
                             <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
                         </button>
                     </div>
-                    <!-- Tombol Unduh PDF (Muncul untuk Publik & Admin) -->
+                        <label class="bg-blue-700 hover:bg-blue-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-file-excel"></i> Upload Excel Jumat
+                            <input type="file" id="jumatFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleJumatExcelUpload(event)">
+                        </label>
+                        <!-- 📌 TOMBOL BARU HAPUS SEMUA DATA PEKAN INI -->
+                        <button onclick="resetJumatPeriod()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-1.5 rounded-lg text-xs border border-rose-300 transition flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> Hapus Data Pekan Ini
+                        </button>
+                    </div>
                     <button onclick="exportJumatPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow flex items-center gap-1.5 ml-auto">
                         <i class="fa-solid fa-file-pdf"></i> Unduh PDF Laporan Jumat
                     </button>
                 </div>
+            </div>
 
             <!-- Tabel Detail Transaksi Pekan Ini -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
@@ -208,8 +217,7 @@
                 </div>
             </div>
         </div>
-            
-         <div id="sectionBulanan">
+      <!-- ✅ PERBAIKAN: TAMBAH ID KONTAINER FILTER -->
         <!-- FILTER DROPDOWN PERIODE -->
         <div id="filterPeriodContainer" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
             <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -257,7 +265,7 @@
         </div>
 
         <!-- Ringkasan Kas Utama -->
-        <div class="monthly-section grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
                 <p class="text-[11px] text-slate-500 font-medium">Saldo Awal</p>
                 <p id="txtSaldoAwal" class="text-sm sm:text-base font-bold text-slate-700 mt-1">Rp 0</p>
@@ -277,7 +285,7 @@
         </div>
 
         <!-- Rincian Saldo per Akad / Dana -->
-        <div class="monthly-section bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
             <p class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5">
                 <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo Akhir per Akad / Dana
             </p>
@@ -294,7 +302,7 @@
         </div>
 
         <!-- Tabel Transaksi Pemasukan -->
-        <div class="monthly-section bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
             <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 font-bold text-emerald-800 text-sm flex justify-between items-center">
                 <span><i class="fa-solid fa-arrow-down text-emerald-600 mr-1.5"></i> Transaksi Pemasukan</span>
             </div>
@@ -317,7 +325,7 @@
         </div>
 
         <!-- Tabel Transaksi Pengeluaran -->
-        <div class="monthly-section bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
             <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 font-bold text-rose-800 text-sm flex justify-between items-center">
                 <span><i class="fa-solid fa-arrow-up text-rose-600 mr-1.5"></i> Transaksi Pengeluaran Operasional</span>
             </div>
@@ -338,7 +346,7 @@
                 </table>
             </div>
         </div>
-        </div>   
+
     </main>
 
     <!-- Modal Login Admin -->
@@ -1360,26 +1368,33 @@
             currentMode = mode;
             const btnB = document.getElementById('btnTabBulanan');
             const btnJ = document.getElementById('btnTabJumat');
-            const secB = document.getElementById('sectionBulanan');
             const secJ = document.getElementById('sectionJumat');
+            const filterContainer = document.getElementById('filterPeriodContainer');
 
             if (mode === 'jumat') {
                 btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                secJ.classList.remove('hidden');
                 
-                if (secB) secB.classList.add('hidden');
-                if (secJ) secJ.classList.remove('hidden');
-                
+                // Sembunyikan panel admin bulanan & filter dropdown periode bulanan
                 document.getElementById('adminPanel').classList.add('hidden');
+                if (filterContainer) filterContainer.classList.add('hidden');
+                
+                // Sembunyikan semua elemen dashboard laporan bulanan
+                document.querySelectorAll('main > div:not(#sectionJumat):not(.flex)').forEach(el => el.classList.add('hidden'));
                 
                 renderJumatPeriod();
                 checkAdminSession();
             } else {
                 btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
                 btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                secJ.classList.add('hidden');
                 
-                if (secJ) secJ.classList.add('hidden');
-                if (secB) secB.classList.remove('hidden');
+                // Tampilkan kembali filter dropdown periode bulanan
+                if (filterContainer) filterContainer.classList.remove('hidden');
+                
+                // Tampilkan kembali elemen dashboard laporan bulanan
+                document.querySelectorAll('main > div:not(#sectionJumat)').forEach(el => el.classList.remove('hidden'));
                 
                 checkAdminSession();
                 renderCurrentPeriod();
@@ -1920,10 +1935,19 @@ function renderJumatPeriod() {
 
             doc.save(`Laporan_Jumat_Masjid_Baitul_Jannah.pdf`);
         }
-        // --- INISIALISASI UTAMA ---
+        // --- INISIALISASI UTAMA KONSISTEN & PRESISI ---
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
             fetchCloudData();
+            
+            // Event Listener khusus Drag & Drop Jumat
+        document.addEventListener("DOMContentLoaded", () => {
+            const jumatDrop = document.getElementById('jumatDropZoneContainer');
+            const jumatInput = document.getElementById('jumatFileInput');
+            if (jumatDrop && jumatInput) {
+                jumatDrop.addEventListener('click', () => jumatInput.click());
+            }
+        });
         });
         
     </script>
