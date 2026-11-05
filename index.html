@@ -73,7 +73,8 @@
                 <span id="uploadStatus" class="text-slate-500 italic">Belum ada file di-upload</span>
             </div>
         </div>
-<!-- NAVIGASI MODE LAPORAN (BULANAN VS PEKAN JUMAT) -->
+
+        <!-- NAVIGASI MODE LAPORAN (BULANAN VS PEKAN JUMAT) -->
         <div class="flex justify-center gap-2 mb-4">
             <button id="btnTabBulanan" onclick="switchMode('bulanan')" class="bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700">
                 <i class="fa-solid fa-calendar-days"></i> Laporan Bulanan Utama
@@ -107,13 +108,13 @@
                 </div>
                 
                 <!-- PANEL UPLOAD DRAG & DROP EXCEL KHUSUS LAPORAN JUMAT -->
-            <div id="jumatDropZoneContainer" class="hidden bg-emerald-100/60 border-2 border-dashed border-emerald-400 rounded-2xl p-4 mb-4 text-center cursor-pointer hover:border-emerald-600 transition">
-                <label for="jumatFileInput" class="cursor-pointer">
-                    <i class="fa-solid fa-file-excel text-3xl text-emerald-600 mb-1"></i>
-                    <p class="text-xs sm:text-sm font-bold text-slate-700">Tarik & Lepas File Excel Pekan Jumat Ke Sini</p>
-                    <p class="text-[11px] text-slate-500">atau klik di sini untuk memilih file pekanan</p>
-                </label>
-            </div>
+                <div id="jumatDropZoneContainer" class="hidden bg-emerald-100/60 border-2 border-dashed border-emerald-400 rounded-2xl p-4 mb-4 text-center cursor-pointer hover:border-emerald-600 transition">
+                    <label for="jumatFileInput" class="cursor-pointer">
+                        <i class="fa-solid fa-file-excel text-3xl text-emerald-600 mb-1"></i>
+                        <p class="text-xs sm:text-sm font-bold text-slate-700">Tarik & Lepas File Excel Pekan Jumat Ke Sini</p>
+                        <p class="text-[11px] text-slate-500">atau klik di sini untuk memilih file pekanan</p>
+                    </label>
+                </div>
 
                 <!-- 4 Kartu Kas Pekanan -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -135,7 +136,7 @@
                     </div>
                 </div>
                 
-                <!-- ✅ KARTU RINCIAN SALDO AKHIR PER AKAD (KHUSUS PEKAN JUMAT) -->
+                <!-- KARTU RINCIAN SALDO AKHIR PER AKAD (KHUSUS PEKAN JUMAT) -->
                 <div class="bg-white rounded-xl border border-emerald-200 p-4 mb-4 shadow-sm">
                     <div class="flex justify-between items-center mb-3">
                         <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -149,7 +150,7 @@
                     </div>
                 </div>
                 
-               <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
+                <!-- Tombol Aksi Admin & Upload Excel Pekan Jumat -->
                 <div class="flex flex-wrap justify-between items-center gap-2 border-t border-emerald-200 pt-3">
                     <div id="jumatAdminControls" class="hidden flex flex-wrap items-center gap-2">
                         <button onclick="openJumatAddModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow flex items-center gap-1">
@@ -171,164 +172,168 @@
                     </button>
                 </div>
 
-            <!-- Tabel Detail Transaksi Pekan Ini -->
+                <!-- Tabel Detail Transaksi Pekan Ini -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden mt-4">
+                    <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 font-bold text-slate-800 text-sm flex justify-between items-center">
+                        <span><i class="fa-solid fa-list-check text-emerald-600 mr-1.5"></i> Detail Transaksi Pekan Ini</span>
+                    </div>
+                    <div class="p-4 overflow-x-auto">
+                        <table class="w-full text-left text-xs sm:text-sm">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-200">
+                                    <th class="pb-2 w-28">Tgl</th>
+                                    <th class="pb-2">Keterangan</th>
+                                    <th class="pb-2 text-right w-28 text-emerald-600">Masuk</th>
+                                    <th class="pb-2 text-right w-28 text-rose-600">Keluar</th>
+                                    <th class="pb-2 text-center col-action hidden w-20">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblJumatTransaksi" class="divide-y divide-slate-100">
+                                <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-bold bg-slate-50 border-t border-slate-200">
+                                    <td colspan="2" class="py-3 text-slate-700">TOTAL PEKAN INI</td>
+                                    <td id="jumatTotalMasuk" class="py-3 text-right text-emerald-600">Rp 0</td>
+                                    <td id="jumatTotalKeluar" class="py-3 text-right text-rose-600">Rp 0</td>
+                                    <td class="col-action hidden"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📌 PEMBUNGKUS UTAMA LAPORAN BULANAN (SOLUSI FIX STABIL) -->
+        <div id="sectionBulanan">
+            <!-- FILTER DROPDOWN PERIODE -->
+            <div id="filterPeriodContainer" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <label class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1">
+                        <i class="fa-solid fa-calendar-days text-emerald-600"></i> Periode Laporan:
+                    </label>
+                    <select id="selectYear" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg p-2 font-bold focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="2027">2027</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                    <select id="selectMonth" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg p-2 font-bold focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="Januari">Januari</option>
+                        <option value="Februari">Februari</option>
+                        <option value="Maret">Maret</option>
+                        <option value="April">April</option>
+                        <option value="Mei">Mei</option>
+                        <option value="Juni">Juni</option>
+                        <option value="Juli">Juli</option>
+                        <option value="Agustus">Agustus</option>
+                        <option value="September">September</option>
+                        <option value="Oktober">Oktober</option>
+                        <option value="November">November</option>
+                        <option value="Desember">Desember</option>
+                    </select>
+                </div>
+                <div class="text-xs text-slate-400">
+                    Status: <span id="periodStatus" class="font-semibold text-emerald-600">Memuat Cloud...</span>
+                </div>
+                <!-- MENU DROPDOWN DOWNLOAD LAPORAN -->
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleDownloadDropdown()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow transition">
+                        <i class="fa-solid fa-file-arrow-down"></i> Unduh Laporan <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div id="downloadDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1">
+                        <button onclick="exportToExcel()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i> Download Format Excel (.xlsx)
+                        </button>
+                        <button onclick="exportToPDF()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-rose-50 hover:text-rose-700 font-semibold flex items-center gap-2 border-t border-slate-100">
+                            <i class="fa-solid fa-file-pdf text-rose-600 text-sm"></i> Download Format PDF (.pdf)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ringkasan Kas Utama -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[11px] text-slate-500 font-medium">Saldo Awal</p>
+                    <p id="txtSaldoAwal" class="text-sm sm:text-base font-bold text-slate-700 mt-1">Rp 0</p>
+                </div>
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[11px] text-slate-500 font-medium">Total Pemasukan</p>
+                    <p id="txtPemasukan" class="text-sm sm:text-base font-bold text-emerald-600 mt-1">Rp 0</p>
+                </div>
+                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-[11px] text-slate-500 font-medium">Total Pengeluaran</p>
+                    <p id="txtPengeluaran" class="text-sm sm:text-base font-bold text-rose-600 mt-1">Rp 0</p>
+                </div>
+                <div class="bg-purple-50 p-3.5 rounded-xl border border-purple-200 shadow-sm">
+                    <p class="text-[11px] text-purple-700 font-bold">Total Saldo Akhir</p>
+                    <p id="txtSaldoAkhir" class="text-base sm:text-lg font-extrabold text-purple-900 mt-1">Rp 0</p>
+                </div>
+            </div>
+
+            <!-- Rincian Saldo per Akad / Dana -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+                <p class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo Akhir per Akad / Dana
+                </p>
+                <div id="containerAkad" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-600">Infak Umum</span>
+                        <span id="txtInfakUmum" class="text-sm font-bold text-emerald-600">Rp 0</span>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-600">Infak Yatim</span>
+                        <span id="txtInfakYatim" class="text-sm font-bold text-emerald-600">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Transaksi Pemasukan -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-                <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 font-bold text-slate-800 text-sm flex justify-between items-center">
-                    <span><i class="fa-solid fa-list-check text-emerald-600 mr-1.5"></i> Detail Transaksi Pekan Ini</span>
+                <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 font-bold text-emerald-800 text-sm flex justify-between items-center">
+                    <span><i class="fa-solid fa-arrow-down text-emerald-600 mr-1.5"></i> Transaksi Pemasukan</span>
                 </div>
                 <div class="p-4 overflow-x-auto">
                     <table class="w-full text-left text-xs sm:text-sm">
                         <thead>
                             <tr class="text-slate-400 border-b border-slate-200">
-                                <th class="pb-2 w-28">Tgl</th>
+                                <th class="pb-2 w-20">Tgl</th>
                                 <th class="pb-2">Keterangan</th>
-                                <th class="pb-2 text-right w-28 text-emerald-600">Masuk</th>
-                                <th class="pb-2 text-right w-28 text-rose-600">Keluar</th>
+                                <th class="pb-2 w-28">Dana/Akad</th>
+                                <th class="pb-2 text-right">Nominal</th>
                                 <th class="pb-2 text-center col-action hidden w-20">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="tblJumatTransaksi" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>
+                        <tbody id="tblPemasukan" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk bulan ini</td></tr>
                         </tbody>
-                        <tfoot>
-                            <tr class="font-bold bg-slate-50 border-t border-slate-200">
-                                <td colspan="2" class="py-3 text-slate-700">TOTAL PEKAN INI</td>
-                                <td id="jumatTotalMasuk" class="py-3 text-right text-emerald-600">Rp 0</td>
-                                <td id="jumatTotalKeluar" class="py-3 text-right text-rose-600">Rp 0</td>
-                                <td class="col-action hidden"></td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
             </div>
-        </div>
-      <!-- ✅ PERBAIKAN: TAMBAH ID KONTAINER FILTER -->
-        <!-- FILTER DROPDOWN PERIODE -->
-        <div id="filterPeriodContainer" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <label class="text-xs sm:text-sm font-bold text-slate-700 flex items-center gap-1">
-                    <i class="fa-solid fa-calendar-days text-emerald-600"></i> Periode Laporan:
-                </label>
-                <select id="selectYear" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg p-2 font-bold focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="2027">2027</option>
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                </select>
-                <select id="selectMonth" onchange="renderCurrentPeriod()" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg p-2 font-bold focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="Januari">Januari</option>
-                    <option value="Februari">Februari</option>
-                    <option value="Maret">Maret</option>
-                    <option value="April">April</option>
-                    <option value="Mei">Mei</option>
-                    <option value="Juni">Juni</option>
-                    <option value="Juli">Juli</option>
-                    <option value="Agustus">Agustus</option>
-                    <option value="September">September</option>
-                    <option value="Oktober">Oktober</option>
-                    <option value="November">November</option>
-                    <option value="Desember">Desember</option>
-                </select>
-            </div>
-            <div class="text-xs text-slate-400">
-                Status: <span id="periodStatus" class="font-semibold text-emerald-600">Memuat Cloud...</span>
-            </div>
-            <!-- MENU DROPDOWN DOWNLOAD LAPORAN (PUBLIK & ADMIN) -->
-            <div class="relative inline-block text-left">
-                <button onclick="toggleDownloadDropdown()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 shadow transition">
-                    <i class="fa-solid fa-file-arrow-down"></i> Unduh Laporan <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                </button>
-                <div id="downloadDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1">
-                    <button onclick="exportToExcel()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-semibold flex items-center gap-2">
-                        <i class="fa-solid fa-file-excel text-emerald-600 text-sm"></i> Download Format Excel (.xlsx)
-                    </button>
-                    <button onclick="exportToPDF()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-rose-50 hover:text-rose-700 font-semibold flex items-center gap-2 border-t border-slate-100">
-                        <i class="fa-solid fa-file-pdf text-rose-600 text-sm"></i> Download Format PDF (.pdf)
-                    </button>
+
+            <!-- Tabel Transaksi Pengeluaran -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
+                <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 font-bold text-rose-800 text-sm flex justify-between items-center">
+                    <span><i class="fa-solid fa-arrow-up text-rose-600 mr-1.5"></i> Transaksi Pengeluaran Operasional</span>
                 </div>
-            </div>
-        </div>
-
-        <!-- Ringkasan Kas Utama -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-[11px] text-slate-500 font-medium">Saldo Awal</p>
-                <p id="txtSaldoAwal" class="text-sm sm:text-base font-bold text-slate-700 mt-1">Rp 0</p>
-            </div>
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-[11px] text-slate-500 font-medium">Total Pemasukan</p>
-                <p id="txtPemasukan" class="text-sm sm:text-base font-bold text-emerald-600 mt-1">Rp 0</p>
-            </div>
-            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-[11px] text-slate-500 font-medium">Total Pengeluaran</p>
-                <p id="txtPengeluaran" class="text-sm sm:text-base font-bold text-rose-600 mt-1">Rp 0</p>
-            </div>
-            <div class="bg-purple-50 p-3.5 rounded-xl border border-purple-200 shadow-sm">
-                <p class="text-[11px] text-purple-700 font-bold">Total Saldo Akhir</p>
-                <p id="txtSaldoAkhir" class="text-base sm:text-lg font-extrabold text-purple-900 mt-1">Rp 0</p>
-            </div>
-        </div>
-
-        <!-- Rincian Saldo per Akad / Dana -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-            <p class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-1.5">
-                <i class="fa-solid fa-wallet text-purple-600"></i> Rincian Saldo Akhir per Akad / Dana
-            </p>
-            <div id="containerAkad" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-600">Infak Umum</span>
-                    <span id="txtInfakUmum" class="text-sm font-bold text-emerald-600">Rp 0</span>
+                <div class="p-4 overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-200">
+                                <th class="pb-2 w-20">Tgl</th>
+                                <th class="pb-2">Uraian / Keterangan Pengeluaran</th>
+                                <th class="pb-2 w-28">Dana/Akad</th>
+                                <th class="pb-2 text-right">Nominal</th>
+                                <th class="pb-2 text-center col-action hidden w-20">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblPengeluaran" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk bulan ini</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex justify-between items-center">
-                    <span class="text-xs font-semibold text-slate-600">Infak Yatim</span>
-                    <span id="txtInfakYatim" class="text-sm font-bold text-emerald-600">Rp 0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabel Transaksi Pemasukan -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-            <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-100 font-bold text-emerald-800 text-sm flex justify-between items-center">
-                <span><i class="fa-solid fa-arrow-down text-emerald-600 mr-1.5"></i> Transaksi Pemasukan</span>
-            </div>
-            <div class="p-4 overflow-x-auto">
-                <table class="w-full text-left text-xs sm:text-sm">
-                    <thead>
-                        <tr class="text-slate-400 border-b border-slate-200">
-                            <th class="pb-2 w-20">Tgl</th>
-                            <th class="pb-2">Keterangan</th>
-                            <th class="pb-2 w-28">Dana/Akad</th>
-                            <th class="pb-2 text-right">Nominal</th>
-                            <th class="pb-2 text-center col-action hidden w-20">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tblPemasukan" class="divide-y divide-slate-100">
-                        <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk bulan ini</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Tabel Transaksi Pengeluaran -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-6 overflow-hidden">
-            <div class="bg-rose-50 px-4 py-3 border-b border-rose-100 font-bold text-rose-800 text-sm flex justify-between items-center">
-                <span><i class="fa-solid fa-arrow-up text-rose-600 mr-1.5"></i> Transaksi Pengeluaran Operasional</span>
-            </div>
-            <div class="p-4 overflow-x-auto">
-                <table class="w-full text-left text-xs sm:text-sm">
-                    <thead>
-                        <tr class="text-slate-400 border-b border-slate-200">
-                            <th class="pb-2 w-20">Tgl</th>
-                            <th class="pb-2">Uraian / Keterangan Pengeluaran</th>
-                            <th class="pb-2 w-28">Dana/Akad</th>
-                            <th class="pb-2 text-right">Nominal</th>
-                            <th class="pb-2 text-center col-action hidden w-20">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tblPengeluaran" class="divide-y divide-slate-100">
-                        <tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data laporan untuk bulan ini</td></tr>
-                    </tbody>
-                </table>
             </div>
         </div>
 
@@ -352,7 +357,7 @@
         </div>
     </div>
 
-   <!-- Modal Setting PIN Admin & Nama Pengurus -->
+    <!-- Modal Setting PIN Admin & Nama Pengurus -->
     <div id="settingModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-xs w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center mb-4">
@@ -427,6 +432,7 @@
             </div>
         </div>
     </div>
+
     <!-- Modal Tambah Transaksi Pekan Jumat -->
     <div id="jumatAddModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
@@ -466,7 +472,7 @@
         </div>
     </div>
 
-    <!-- Modal Edit Transaksi Pekan Jumat (FITUR BARU) -->
+    <!-- Modal Edit Transaksi Pekan Jumat -->
     <div id="jumatEditModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center mb-4">
@@ -505,7 +511,8 @@
             </div>
         </div>
     </div>
-    <!-- ✅ MODAL INPUT MANUAL RINCIAN SALDO AKAD PEKAN JUMAT -->
+
+    <!-- MODAL INPUT MANUAL RINCIAN SALDO AKAD PEKAN JUMAT -->
     <div id="jumatAkadModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex justify-between items-center mb-4">
@@ -517,7 +524,6 @@
             
             <p class="text-xs text-slate-500 mb-3">Tambahkan item jenis infak dan nominal saldo akhirnya secara manual untuk pekan ini.</p>
 
-            <!-- Form Tambah Row -->
             <div class="flex gap-2 mb-4 bg-purple-50 p-3 rounded-xl border border-purple-100">
                 <input type="text" id="inputNamaAkadJumat" placeholder="Jenis Infak (mis: Infak Umum)" class="w-1/2 border border-slate-300 p-2 rounded-lg text-xs">
                 <input type="number" id="inputNominalAkadJumat" placeholder="Nominal (Rp)" class="w-1/2 border border-slate-300 p-2 rounded-lg text-xs font-mono">
@@ -526,7 +532,6 @@
                 </button>
             </div>
 
-            <!-- List Item Rincian yang Sudah Ditambahkan -->
             <div class="max-h-56 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl mb-4 p-2 bg-slate-50" id="listJumatAkadItems">
                 <!-- Diisi via JS -->
             </div>
@@ -538,10 +543,11 @@
     </div>
 
     <script>
-        // MASUKKAN URL WEB APP HASIL DEPLOYMENT APPS SCRIPT ANDA DI SINI
         const API_URL = "https://script.google.com/macros/s/AKfycbyh-XsQEV-pEkuo1y9K2aUy_Yszr1RZvVPwCFPR3NVqtJNReBfbAtl88z-KOCYWGgbvbQ/exec";
 
         let masterDatabase = {};
+        let currentMode = "bulanan"; 
+        let currentJumatWeekOffset = 0;
 
         const formatRp = (num) => {
             let val = Number(num) || 0;
@@ -555,7 +561,6 @@
             return localStorage.getItem('admin_pin_key') || '1234';
         }
 
-        // --- FUNGSI TANGGAL PRESISI TANGGAL 1 (BEBAS DARI OVERFLOW AKHIR BULAN) ---
         function setDefaultToPreviousMonth() {
             const now = new Date();
             now.setDate(1); 
@@ -579,7 +584,6 @@
             }
         }
 
-        // --- FETCH DATA DARI CLOUD GOOGLE SHEETS ---
         async function fetchCloudData() {
             const statusEl = document.getElementById('periodStatus');
             if (statusEl) statusEl.innerText = "Memuat Cloud...";
@@ -599,7 +603,7 @@
                     masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
                 }
                 
-                if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
+                if (currentMode === 'jumat') {
                     renderJumatPeriod();
                 } else {
                     renderCurrentPeriod();
@@ -607,7 +611,7 @@
             } catch (e) {
                 console.error("Gagal sinkron Cloud:", e);
                 masterDatabase = JSON.parse(localStorage.getItem('masjid_db_master')) || {};
-                if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
+                if (currentMode === 'jumat') {
                     renderJumatPeriod();
                 } else {
                     renderCurrentPeriod();
@@ -615,9 +619,9 @@
             }
         }
 
-        // --- SAVE DATA KE CLOUD GOOGLE SHEETS ---
         async function syncToCloud(updatedDb) {
-            document.getElementById('uploadStatus').innerText = "Menyimpan ke Cloud...";
+            const uploadStatusEl = document.getElementById('uploadStatus');
+            if (uploadStatusEl) uploadStatusEl.innerText = "Menyimpan ke Cloud...";
             try {
                 await fetch(API_URL, {
                     method: 'POST',
@@ -626,15 +630,14 @@
                     body: JSON.stringify(updatedDb)
                 });
                 localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
-                document.getElementById('uploadStatus').innerText = "Tersimpan di Cloud Google Sheets";
+                if (uploadStatusEl) uploadStatusEl.innerText = "Tersimpan di Cloud Google Sheets";
             } catch (e) {
                 console.error("Gagal kirim ke Cloud:", e);
                 localStorage.setItem('masjid_db_master', JSON.stringify(updatedDb));
             }
         }
 
-        // --- AUTH & ADMIN PANEL ---
-    // ✅ FUNGSI KONTROL MODE ADMIN & PUBLIK PRESISI
+        // --- KONTROL MODE ADMIN & PUBLIK BERSIH ---
         function checkAdminSession() {
             const isAdmin = localStorage.getItem('is_admin_logged_in') === 'true';
             const colActions = document.querySelectorAll('.col-action');
@@ -643,33 +646,27 @@
                 document.getElementById('btnLogin').classList.add('hidden');
                 document.getElementById('adminBadge').classList.remove('hidden');
                 
-                if (typeof currentMode !== 'undefined' && currentMode === 'jumat') {
+                if (currentMode === 'jumat') {
                     document.getElementById('adminPanel').classList.add('hidden');
-                    
                     const jumatCtrl = document.getElementById('jumatAdminControls');
                     if (jumatCtrl) {
                         jumatCtrl.classList.remove('hidden');
-                        jumatCtrl.style.display = 'flex'; // Tampilkan hanya saat Admin di Mode Jumat
+                        jumatCtrl.style.display = 'flex';
                     }
-                    
                     const jumatDrop = document.getElementById('jumatDropZoneContainer');
                     if (jumatDrop) jumatDrop.classList.remove('hidden');
                 } else {
                     document.getElementById('adminPanel').classList.remove('hidden');
-                    
                     const jumatCtrl = document.getElementById('jumatAdminControls');
                     if (jumatCtrl) {
                         jumatCtrl.classList.add('hidden');
                         jumatCtrl.style.display = 'none';
                     }
-                    
                     const jumatDrop = document.getElementById('jumatDropZoneContainer');
                     if (jumatDrop) jumatDrop.classList.add('hidden');
                 }
-
                 colActions.forEach(el => el.classList.remove('hidden'));
             } else {
-                // --- MODE PUBLIK (SEMUA PANEL & TOMBOL UPLOAD/HAPUS ADMIN DISEMBUNYIKAN) ---
                 document.getElementById('btnLogin').classList.remove('hidden');
                 document.getElementById('adminBadge').classList.add('hidden');
                 document.getElementById('adminPanel').classList.add('hidden');
@@ -677,15 +674,15 @@
                 const jumatCtrl = document.getElementById('jumatAdminControls');
                 if (jumatCtrl) {
                     jumatCtrl.classList.add('hidden');
-                    jumatCtrl.style.display = 'none'; // Sembunyikan total di mode publik
+                    jumatCtrl.style.display = 'none';
                 }
-                
                 const jumatDrop = document.getElementById('jumatDropZoneContainer');
                 if (jumatDrop) jumatDrop.classList.add('hidden');
                 
                 colActions.forEach(el => el.classList.add('hidden'));
             }
         }
+
         function openLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); document.getElementById('inputPin').focus(); }
         function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); document.getElementById('inputPin').value = ''; }
 
@@ -695,7 +692,7 @@
                 localStorage.setItem('is_admin_logged_in', 'true');
                 closeLoginModal();
                 checkAdminSession();
-                renderCurrentPeriod();
+                if (currentMode === 'jumat') renderJumatPeriod(); else renderCurrentPeriod();
                 alert("Login Admin Berhasil!");
             } else {
                 alert("PIN Salah! Akses ditolak.");
@@ -705,29 +702,38 @@
         function logoutAdmin() {
             localStorage.removeItem('is_admin_logged_in');
             checkAdminSession();
-            renderCurrentPeriod();
+            if (currentMode === 'jumat') renderJumatPeriod(); else renderCurrentPeriod();
         }
 
-        function openSettingModal() { document.getElementById('settingModal').classList.remove('hidden'); }
-        function closeSettingModal() { document.getElementById('settingModal').classList.add('hidden'); }
+        // --- SAKELAR PERPINDAHAN TAB BULANAN VS JUMAT ---
+        function switchMode(mode) {
+            currentMode = mode;
+            const btnB = document.getElementById('btnTabBulanan');
+            const btnJ = document.getElementById('btnTabJumat');
+            const secB = document.getElementById('sectionBulanan');
+            const secJ = document.getElementById('sectionJumat');
 
-        function saveNewPin() {
-            const lama = document.getElementById('pinLama').value;
-            const baru = document.getElementById('pinBaru').value;
-            if (lama !== getStoredPin()) {
-                alert("PIN Lama tidak sesuai!");
-                return;
+            if (mode === 'jumat') {
+                btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
+                btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                
+                if (secB) secB.classList.add('hidden');
+                if (secJ) secJ.classList.remove('hidden');
+                
+                renderJumatPeriod();
+            } else {
+                btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
+                btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
+                
+                if (secJ) secJ.classList.add('hidden');
+                if (secB) secB.classList.remove('hidden');
+                
+                renderCurrentPeriod();
             }
-            if (!baru || baru.length < 4) {
-                alert("PIN Baru minimal 4 karakter!");
-                return;
-            }
-            localStorage.setItem('admin_pin_key', baru);
-            alert("PIN Admin Berhasil Diperbarui!");
-            closeSettingModal();
+            checkAdminSession();
         }
 
-        // --- DRAG & DROP FILE HANDLER ---
+        // --- UPLOAD DRAG & DROP BULANAN ---
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
 
@@ -760,7 +766,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- PARSER 100% PRESISI BERDASARKAN HEADER & POSISI MURNI ---
         function parseAndSaveExcel(rawRows, fileName) {
             let year = document.getElementById('selectYear').value;
             let month = document.getElementById('selectMonth').value;
@@ -770,29 +775,20 @@
                 if(fileName.toLowerCase().includes(m.toLowerCase())) month = m;
             });
 
-            // 1. Auto Trim Kolom Kosong di Kiri
             let rows = rawRows.map(row => {
                 if (!row) return [];
                 let firstValidIdx = row.findIndex(cell => cell !== null && cell !== undefined && String(cell).trim() !== "");
                 return firstValidIdx > 0 ? row.slice(firstValidIdx) : row;
             });
 
-            let saldoAwal = 0;
-            let totalPemasukanExcel = 0;
-            let totalPengeluaranExcel = 0;
-            let infakUmumSisa = 0;
-            let infakYatimSisa = 0;
-
-            let listPemasukan = [];
-            let listPengeluaran = [];
-            let currentSection = "PEMASUKAN"; // Default awal
+            let saldoAwal = 0, totalPemasukanExcel = 0, totalPengeluaranExcel = 0, infakUmumSisa = 0, infakYatimSisa = 0;
+            let listPemasukan = [], listPengeluaran = [];
+            let currentSection = "PEMASUKAN";
 
             rows.forEach(row => {
                 if (!row || !row.length) return;
-
                 let rowStr = row.map(c => String(c || '')).join(" ").toLowerCase();
 
-                // Deteksi Sekat Section
                 if (rowStr.includes("pemasukan") && !rowStr.includes("total") && !rowStr.includes("laporan")) {
                     currentSection = "PEMASUKAN";
                     return;
@@ -802,7 +798,6 @@
                     return;
                 }
 
-                // Deteksi Ringkasan Utama
                 if (rowStr.includes("saldo awal")) {
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) saldoAwal = cell; });
                 }
@@ -819,15 +814,11 @@
                     row.forEach(cell => { if (typeof cell === 'number' && Math.abs(cell) > 100) infakYatimSisa = cell; });
                 }
 
-                // Abaikan Baris Header, Total, & Baris Rincian Saldo
                 if (rowStr.includes("tanggal") && (rowStr.includes("keterangan") || rowStr.includes("uraian"))) return;
                 if (rowStr.includes("total pemasukan") || rowStr.includes("total pengeluaran") || rowStr.includes("rincian saldo")) return;
                 if (rowStr.trim() === "total" || rowStr.startsWith("total ")) return;
 
-                // Ekstrak Baris Transaksi Berdasarkan Struktur Kolom Baku (0: Tgl, 1: Keterangan, 2: Akad, 3: Nominal)
                 let tgl = "", ket = "", akad = "", nominal = 0;
-
-                // Cari Nilai Nominal (Angka > 100 atau Minus)
                 let nominalIdx = -1;
                 for (let i = row.length - 1; i >= 0; i--) {
                     if (typeof row[i] === 'number' && Math.abs(row[i]) > 100) {
@@ -838,39 +829,26 @@
                 }
 
                 if (nominalIdx !== -1) {
-                    // Berjalan ke kiri dari nominal untuk mengambil Akad, Keterangan, Tanggal
                     for (let i = 0; i < nominalIdx; i++) {
                         let cell = row[i];
                         if (cell === null || cell === undefined) continue;
-
                         let cStr = String(cell).trim();
                         let cLower = cStr.toLowerCase();
 
-                        // Deteksi Tanggal
                         let isDateStr = cLower.includes("2024") || cLower.includes("2025") || cLower.includes("2026") || cLower.includes("2027");
                         if ((typeof cell === 'number' && cell >= 1 && cell <= 31) || isDateStr) {
                             if (!tgl) tgl = typeof cell === 'number' ? `${cell} ${month.substring(0,3)}` : cStr.replace('2026-', '').replace('2025-', '').replace('2027-', '');
-                        }
-                        // Deteksi Akad Presisi (Hanya teks akad murni tanpa uraian panjang)
-                        else if ((cLower === "infak umum" || cLower === "infak yatim" || cLower === "infak muqayyad" || cLower === "infak umum & yatim") && !akad) {
+                        } else if ((cLower === "infak umum" || cLower === "infak yatim" || cLower === "infak muqayyad" || cLower === "infak umum & yatim") && !akad) {
                             akad = cStr;
-                        }
-                        // Semua Teks Keterangan / Uraian Transaksi
-                        else if (cStr.length > 2 && !ket && !monthsList.some(m => m.toLowerCase() === cLower) && !cLower.includes("saldo awal")) {
+                        } else if (cStr.length > 2 && !ket && !monthsList.some(m => m.toLowerCase() === cLower) && !cLower.includes("saldo awal")) {
                             ket = cStr;
                         }
                     }
 
-                    // Isi Akad Default jika tidak spesifik
                     if (!akad) {
-                        if (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) {
-                            akad = "Infak Yatim";
-                        } else {
-                            akad = "Infak Umum";
-                        }
+                        akad = (ket.toLowerCase().includes("yatim") || ket.toLowerCase().includes("dhuafa")) ? "Infak Yatim" : "Infak Umum";
                     }
 
-                    // Masukkan ke List yang Tepat
                     if (ket && nominal && !ket.toLowerCase().includes("saldo awal")) {
                         if (currentSection === "PEMASUKAN") {
                             listPemasukan.push({ tgl: tgl || "-", ket, akad, nominal });
@@ -923,7 +901,6 @@
             alert(`Laporan Periode ${mo} ${yr} Berhasil Di-upload ke Google Sheets!`);
         }
 
-        // --- RENDER PERIOD DATA ---
         function renderCurrentPeriod() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -933,8 +910,10 @@
             const statusEl = document.getElementById('periodStatus');
 
             if (!data) {
-                statusEl.innerText = "Belum Ada Data";
-                statusEl.className = "font-semibold text-rose-500";
+                if (statusEl) {
+                    statusEl.innerText = "Belum Ada Data";
+                    statusEl.className = "font-semibold text-rose-500";
+                }
                 document.getElementById('txtSaldoAwal').innerText = "Rp 0";
                 document.getElementById('txtPemasukan').innerText = "Rp 0";
                 document.getElementById('txtPengeluaran').innerText = "Rp 0";
@@ -948,8 +927,10 @@
                 return;
             }
 
-            statusEl.innerText = "Tersedia (Cloud)";
-            statusEl.className = "font-semibold text-emerald-600";
+            if (statusEl) {
+                statusEl.innerText = "Tersedia (Cloud)";
+                statusEl.className = "font-semibold text-emerald-600";
+            }
 
             let sisaUmum = Number(data.infakUmumSisa) || 0;
             let sisaYatim = Number(data.infakYatimSisa) || 0;
@@ -971,10 +952,8 @@
             elInfakUmum.className = sisaUmum < 0 ? "text-sm font-bold text-rose-600" : "text-sm font-bold text-emerald-600";
 
             document.getElementById('txtInfakYatim').innerText = formatRp(sisaYatim);
-
             document.getElementById('uploadStatus').innerText = `File Aktif: ${data.fileName}`;
 
-            // Render Pemasukan
             document.getElementById('tblPemasukan').innerHTML = data.listPemasukan.length ? data.listPemasukan.map((i, idx) => `
                 <tr>
                     <td class="py-2.5 text-slate-400 font-mono text-xs">${i.tgl || '-'}</td>
@@ -988,7 +967,6 @@
                 </tr>
             `).join('') : `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Tidak ada transaksi pemasukan</td></tr>`;
 
-            // Render Pengeluaran
             document.getElementById('tblPengeluaran').innerHTML = data.listPengeluaran.length ? data.listPengeluaran.map((i, idx) => `
                 <tr>
                     <td class="py-2.5 text-slate-400 font-mono text-xs">${i.tgl || '-'}</td>
@@ -1005,7 +983,7 @@
             checkAdminSession();
         }
 
-        // --- EDIT & DELETE TRANSAKSI ---
+        // --- EDIT & DELETE TRANSAKSI BULANAN ---
         function openEditModal(type, index) {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -1085,7 +1063,8 @@
                 renderCurrentPeriod();
             }
         }
-// --- FITUR DOWNLOAD EXCEL & PDF ---
+
+        // --- EXPORT BULANAN EXCEL & PDF ---
         function toggleDownloadDropdown() {
             const dropdown = document.getElementById('downloadDropdownMenu');
             if (dropdown) dropdown.classList.toggle('hidden');
@@ -1101,7 +1080,6 @@
             }
         });
 
-        // 1. EXPORT TO EXCEL (.XLSX)
         function exportToExcel() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -1146,8 +1124,6 @@
             XLSX.writeFile(wb, `LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.xlsx`);
         }
 
-       // 2. EXPORT TO PDF (.PDF)
-       // 2. EXPORT TO PDF (.PDF) - DENGAN TANDA TANGAN TAKMIR & BENDAHARA DINAMIS
         function exportToPDF() {
             const yr = document.getElementById('selectYear').value;
             const mo = document.getElementById('selectMonth').value;
@@ -1161,7 +1137,6 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Header Dokumen
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(5, 150, 105);
@@ -1178,7 +1153,6 @@
 
             let currentY = 30;
 
-            // Judul Bagian Ringkasan
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(40);
@@ -1186,7 +1160,6 @@
 
             currentY += 4;
 
-            // TABEL 1: RINGKASAN KAS UTAMA (Hanya Saldo Awal, Pemasukan, Pengeluaran, & Saldo Akhir)
             const summaryMain = [
                 ["Saldo Awal", formatRp(data.saldoAwal)],
                 ["Total Pemasukan", formatRp(data.totalMasuk)],
@@ -1196,7 +1169,7 @@
 
             doc.autoTable({
                 startY: currentY,
-                margin: { left: 14, right: 105 }, // Memakai separuh lebar halaman kiri
+                margin: { left: 14, right: 105 },
                 head: [["Keterangan Kas Utama", "Jumlah (Rp)"]],
                 body: summaryMain,
                 theme: 'striped',
@@ -1205,7 +1178,6 @@
                 columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
             });
 
-            // TABEL 2: RINCIAN DANA / AKAD (Diletakkan bersandingan di sebelah kanan)
             const rincianAkadData = [
                 ["Sisa Infak Umum", formatRp(data.infakUmumSisa)],
                 ["Sisa Infak Yatim", formatRp(data.infakYatimSisa)]
@@ -1213,18 +1185,17 @@
 
             doc.autoTable({
                 startY: currentY,
-                margin: { left: 108, right: 14 }, // Diletakkan di sebelah kanan
+                margin: { left: 108, right: 14 },
                 head: [["Komposisi Saldo per Akad", "Jumlah (Rp)"]],
                 body: rincianAkadData,
                 theme: 'striped',
-                headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' }, // Warna ungu
+                headStyles: { fillColor: [124, 58, 237], textColor: 255, fontStyle: 'bold' },
                 styles: { fontSize: 8.5, cellPadding: 2 },
                 columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
             });
 
             currentY = Math.max(doc.lastAutoTable.finalY, currentY + 35) + 8;
 
-            // TABEL TRANSAKSI PEMASUKAN
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(5, 150, 105);
@@ -1250,7 +1221,6 @@
 
             currentY = doc.lastAutoTable.finalY + 8;
 
-            // TABEL TRANSAKSI PENGELUARAN
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(225, 29, 72);
@@ -1274,12 +1244,8 @@
                 columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } }
             });
 
-            // --- TANDA TANGAN DINAMIS TAKMIR & BENDAHARA ---
             let finalY = doc.lastAutoTable.finalY + 15;
-            if (finalY > 240) { 
-                doc.addPage(); 
-                finalY = 20; 
-            }
+            if (finalY > 240) { doc.addPage(); finalY = 20; }
 
             const now = new Date();
             const monthsFull = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -1298,8 +1264,7 @@
 
             doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
         }
-        // ==========================================
-      // --- NAMA TAKMIR & BENDAHARA DINAMIS ---
+
         function getTakmirName() {
             return localStorage.getItem('takmir_name') || "Fadlan Zaenuri, S.H";
         }
@@ -1336,58 +1301,12 @@
             closeSettingModal();
         }
 
-        // ==========================================
-        // --- LOGIKA KEUANGAN PEKAN JUMAT (PERBAIKAN LENGKAP) ---
-        // ==========================================
-        let currentMode = "bulanan"; 
-        let currentJumatWeekOffset = 0;
-
-        // 1. Fungsi Menggeser Kartu Pekan (Pekan Lalu / Pekan Depan)
+        // --- LOGIKA KEUANGAN PEKAN JUMAT ---
         function changeJumatWeek(delta) {
             currentJumatWeekOffset += delta;
             renderJumatPeriod();
         }
 
-   function switchMode(mode) {
-            currentMode = mode;
-            const btnB = document.getElementById('btnTabBulanan');
-            const btnJ = document.getElementById('btnTabJumat');
-            const secJ = document.getElementById('sectionJumat');
-            const filterContainer = document.getElementById('filterPeriodContainer');
-
-            if (mode === 'jumat') {
-                btnJ.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
-                btnB.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
-                
-                secJ.classList.remove('hidden');
-                if (filterContainer) filterContainer.classList.add('hidden');
-                document.getElementById('adminPanel').classList.add('hidden');
-                
-                // Sembunyikan elemen bulanan secara eksplisit tanpa mengganggu komponen lain
-                document.querySelectorAll('#filterPeriodContainer, main > div.grid, main > div.bg-white').forEach(el => {
-                    if (el.id !== 'sectionJumat') el.classList.add('hidden');
-                });
-                
-                renderJumatPeriod();
-                checkAdminSession();
-            } else {
-                btnB.className = "bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow flex items-center gap-2 border-2 border-emerald-700";
-                btnJ.className = "bg-white text-slate-600 hover:bg-emerald-50 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm border-2 border-slate-200 flex items-center gap-2 transition";
-                
-                secJ.classList.add('hidden');
-                if (filterContainer) filterContainer.classList.remove('hidden');
-                
-                // Tampilkan kembali elemen bulanan
-                document.querySelectorAll('main > div.grid, main > div.bg-white').forEach(el => {
-                    if (el.id !== 'sectionJumat') el.classList.remove('hidden');
-                });
-                
-                checkAdminSession();
-                renderCurrentPeriod();
-            }
-        }
-        
-        // 2. Perhitungan Matematika Pekan Jumat (Jumat s/d Kamis)
         function getJumatRangeKeyFromDate(dInput) {
             let date = new Date();
             if (dInput) {
@@ -1406,7 +1325,7 @@
 
             if (isNaN(date.getTime())) date = new Date();
 
-            const day = date.getDay(); // 0: Minggu, 5: Jumat
+            const day = date.getDay();
             const diffToJumat = (day >= 5) ? (day - 5) : (day + 2);
             
             const jumat = new Date(date);
@@ -1429,7 +1348,7 @@
             return getJumatRangeKeyFromDate(now);
         }
 
-function renderJumatPeriod() {
+        function renderJumatPeriod() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             document.getElementById('txtJumatRange').innerText = rangeInfo.label;
             
@@ -1479,7 +1398,6 @@ function renderJumatPeriod() {
                 tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Belum ada data transaksi untuk pekan ini</td></tr>`;
             }
 
-            // ✅ RENDER KARTU RINCIAN SALDO AKHIR PER AKAD PEKAN JUMAT
             const containerAkad = document.getElementById('containerJumatAkad');
             if (containerAkad) {
                 const listAkad = weekData.rincianAkad || [];
@@ -1502,7 +1420,6 @@ function renderJumatPeriod() {
             checkAdminSession();
         }
 
-        // 3. Tambah, Edit & Hapus Transaksi Manual Jumat (PERBAIKAN FITUR EDIT & DELETE)
         function openJumatAddModal() { 
             const now = new Date();
             document.getElementById('jumatTgl').value = now.toISOString().split('T')[0];
@@ -1548,7 +1465,6 @@ function renderJumatPeriod() {
             alert("Transaksi Jumat Berhasil Disimpan!");
         }
 
-        // --- FITUR EDIT TRANSAKSI JUMAT ---
         function openJumatEditModal(idx) {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) return;
@@ -1602,7 +1518,6 @@ function renderJumatPeriod() {
             alert("Transaksi Berhasil Diperbarui!");
         }
 
-        // --- FITUR HAPUS SATU TRANSAKSI JUMAT ---
         function deleteJumatTx(idx) {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) return;
@@ -1614,7 +1529,6 @@ function renderJumatPeriod() {
             }
         }
 
-        // --- FITUR HAPUS SEMUA DATA PEKAN INI ---
         function resetJumatPeriod() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             if (confirm(`Apakah Anda yakin ingin MENGHAPUS SEMUA DATA transaksi pada periode ${rangeInfo.label}?`)) {
@@ -1627,7 +1541,6 @@ function renderJumatPeriod() {
             }
         }
 
-        // 4. PARSER PERBAIKAN TOTAL: MEMBACA RINGKASAN UNTUK KARTU & MEMBACA TABEL TRANSAKSI PRESISI
         function processJumatFile(file) {
             if (!file) return;
 
@@ -1640,7 +1553,7 @@ function renderJumatPeriod() {
 
                 let saldoAwal = 0;
                 let listTx = [];
-                let isTableStarted = false; // Flag penanda apakah sudah melewati header tabel utama
+                let isTableStarted = false;
 
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
@@ -1648,7 +1561,6 @@ function renderJumatPeriod() {
 
                     let rowStr = row.map(c => String(c || '').trim().toLowerCase()).join(" ");
 
-                    // 1. MEMBACA SALDO AWAL DARI AREA RINGKASAN DI ATAS TABEL
                     if (!isTableStarted && rowStr.includes("saldo awal")) {
                         let saldoColIdx = row.findIndex(c => String(c || '').toLowerCase().includes("saldo awal"));
                         if (saldoColIdx !== -1 && i + 1 < rows.length) {
@@ -1661,21 +1573,17 @@ function renderJumatPeriod() {
                         continue;
                     }
 
-                    // 2. DETEKSI HEADER TABEL UTAMA (TANGGAL, KETERANGAN, PEMASUKAN, PENGELUARAN)
                     if (rowStr.includes("tanggal") && (rowStr.includes("keterangan") || rowStr.includes("pemasukan"))) {
-                        isTableStarted = true; // Pembacaan transaksi resmi dimulai dari baris berikutnya
+                        isTableStarted = true;
                         continue;
                     }
 
-                    // 3. BACA TRANSAKSI HANYA JIKA SUDAH MELEWATI HEADER TABEL
                     if (isTableStarted) {
-                        // Hentikan pembacaan jika bertemu baris Total Pekan, Semarang, atau Tanda Tangan Pengurus
                         if (rowStr.includes("total pekan") || rowStr.includes("semarang,") || 
                             rowStr.includes("ketua takmir") || rowStr.includes("bendahara")) {
                             break;
                         }
 
-                        // Struktur Kolom Transaksi Excel: 0: No, 1: Tanggal, 2: Keterangan, 3: Pemasukan, 4: Pengeluaran
                         let tglStr = (row.length > 1 && row[1] !== null && row[1] !== undefined) ? String(row[1]).trim() : "";
                         let ket = (row.length > 2 && row[2] !== null && row[2] !== undefined) ? String(row[2]).trim() : "";
                         let masuk = (row.length > 3 && typeof row[3] === 'number' && !isNaN(row[3])) ? row[3] : null;
@@ -1694,7 +1602,6 @@ function renderJumatPeriod() {
                     }
                 }
 
-                // Simpan ke database periode aktif saat ini
                 const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
 
                 if (!masterDatabase.jumat) masterDatabase.jumat = {};
@@ -1709,52 +1616,13 @@ function renderJumatPeriod() {
             };
             reader.readAsArrayBuffer(file);
         }
+
         function handleJumatExcelUpload(event) {
             if (event.target.files.length) {
                 processJumatFile(event.target.files[0]);
             }
         }
 
-        // 5. Inisialisasi Event Drag & Drop Jumat
-        document.addEventListener("DOMContentLoaded", () => {
-            setDefaultToPreviousMonth();
-            fetchCloudData();
-
-            const jumatDrop = document.getElementById('jumatDropZoneContainer');
-            const jumatInput = document.getElementById('jumatFileInput');
-
-            if (jumatDrop && jumatInput) {
-                jumatDrop.addEventListener('click', () => jumatInput.click());
-
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    jumatDrop.addEventListener(eventName, (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        jumatDrop.classList.add('drag-active');
-                    }, false);
-                });
-
-                ['dragleave', 'drop'].forEach(eventName => {
-                    jumatDrop.addEventListener(eventName, (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        jumatDrop.classList.remove('drag-active');
-                    }, false);
-                });
-
-                jumatDrop.addEventListener('drop', (e) => {
-                    const dt = e.dataTransfer;
-                    const files = dt.files;
-                    if (files.length) {
-                        processJumatFile(files[0]);
-                    }
-                }, false);
-            }
-        });
-        
-        // ==========================================
-        // ✅ FUNGSI KELOLA RINCIAN SALDO AKAD PEKAN JUMAT (MANUAL INPUT)
-        // ==========================================
         function openJumatAkadModal() {
             renderJumatAkadModalList();
             document.getElementById('jumatAkadModal').classList.remove('hidden');
@@ -1834,7 +1702,6 @@ function renderJumatPeriod() {
             renderJumatAkadModalList();
         }
 
-        // --- EXPORT PDF JUMAT REAL-TIME DATE & DINAMIS NAMA TAKMIR/BENDAHARA ---
         function exportJumatPDF() {
             const rangeInfo = getJumatRangeKey(currentJumatWeekOffset);
             if (!masterDatabase.jumat || !masterDatabase.jumat[rangeInfo.key]) {
@@ -1904,7 +1771,6 @@ function renderJumatPeriod() {
             let finalY = doc.lastAutoTable.finalY + 15;
             if (finalY > 240) { doc.addPage(); finalY = 20; }
 
-            // Tanggal Cetak Real-Time (Hari ini saat didownload)
             const now = new Date();
             const monthsFull = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
             const realDateStr = `Semarang, ${now.getDate()} ${monthsFull[now.getMonth()]} ${now.getFullYear()}`;
@@ -1921,12 +1787,43 @@ function renderJumatPeriod() {
 
             doc.save(`Laporan_Jumat_Masjid_Baitul_Jannah.pdf`);
         }
-        // --- INISIALISASI UTAMA ---
+
+        // --- INISIALISASI UTAMA SINGLE-ENTRYPOINT ---
         document.addEventListener("DOMContentLoaded", () => {
             setDefaultToPreviousMonth();
             fetchCloudData();
+
+            const jumatDrop = document.getElementById('jumatDropZoneContainer');
+            const jumatInput = document.getElementById('jumatFileInput');
+
+            if (jumatDrop && jumatInput) {
+                jumatDrop.addEventListener('click', () => jumatInput.click());
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    jumatDrop.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        jumatDrop.classList.add('drag-active');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    jumatDrop.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        jumatDrop.classList.remove('drag-active');
+                    }, false);
+                });
+
+                jumatDrop.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files.length) {
+                        processJumatFile(files[0]);
+                    }
+                }, false);
+            }
         });
-        
     </script>
 </body>
 </html>
