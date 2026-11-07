@@ -1320,12 +1320,12 @@
             doc.save(`LAPORAN_KEUANGAN_${mo.toUpperCase()}_${yr}.pdf`);
         }
 
-        function getTakmirName() {
-            return localStorage.getItem('takmir_name') || "Fadlan Zaenuri, S.H";
-        }
-        function getBendaharaName() {
-            return localStorage.getItem('bendahara_name') || "Aditya Budi Santoso, M.Ag";
-        }
+          function getTakmirName() {
+    return (masterDatabase.config && masterDatabase.config.takmirName) || localStorage.getItem('takmir_name') || "Fadlan Zaenuri, S.H";
+}
+function getBendaharaName() {
+    return (masterDatabase.config && masterDatabase.config.bendaharaName) || localStorage.getItem('bendahara_name') || "Aditya Budi Santoso, M.Ag";
+}
 
         function openSettingModal() { 
             document.getElementById('takmirNameInput').value = getTakmirName();
@@ -1335,26 +1335,34 @@
         function closeSettingModal() { document.getElementById('settingModal').classList.add('hidden'); }
 
         function saveNewPin() {
-            const lama = document.getElementById('pinLama').value;
-            const baru = document.getElementById('pinBaru').value;
-            const takmir = document.getElementById('takmirNameInput').value;
-            const bendahara = document.getElementById('bendaharaNameInput').value;
+    const lama = document.getElementById('pinLama').value;
+    const baru = document.getElementById('pinBaru').value;
+    const takmir = document.getElementById('takmirNameInput').value;
+    const bendahara = document.getElementById('bendaharaNameInput').value;
 
-            if (lama && lama !== getStoredPin()) {
-                alert("PIN Lama tidak sesuai!");
-                return;
-            }
-            if (baru && baru.length < 4) {
-                alert("PIN Baru minimal 4 karakter!");
-                return;
-            }
-            if (baru) localStorage.setItem('admin_pin_key', baru);
-            if (takmir) localStorage.setItem('takmir_name', takmir);
-            if (bendahara) localStorage.setItem('bendahara_name', bendahara);
+    if (lama && lama !== getStoredPin()) {
+        alert("PIN Lama tidak sesuai!");
+        return;
+    }
+    if (baru && baru.length < 4) {
+        alert("PIN Baru minimal 4 karakter!");
+        return;
+    }
+    if (baru) localStorage.setItem('admin_pin_key', baru);
 
-            alert("Pengaturan PIN & Nama Pengurus Berhasil Diperbarui!");
-            closeSettingModal();
-        }
+    // Simpan ke database cloud
+    if (!masterDatabase.config) masterDatabase.config = {};
+    if (takmir) masterDatabase.config.takmirName = takmir;
+    if (bendahara) masterDatabase.config.bendaharaName = bendahara;
+
+    if (takmir) localStorage.setItem('takmir_name', takmir);
+    if (bendahara) localStorage.setItem('bendahara_name', bendahara);
+
+    syncToCloud(masterDatabase); // Kirim ke Cloud
+
+    alert("Pengaturan PIN & Nama Pengurus Berhasil Diperbarui di Cloud!");
+    closeSettingModal();
+}
 
         // --- LOGIKA KEUANGAN PEKAN JUMAT ---
         function changeJumatWeek(delta) {
