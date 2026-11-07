@@ -1321,48 +1321,66 @@
         }
 
           function getTakmirName() {
-    return localStorage.getItem('takmir_name') || "NAMA KETUA TAKMIR BARU ANDA";
-}
-function getBendaharaName() {
-    return localStorage.getItem('bendahara_name') || "NAMA BENDAHARA BARU ANDA";
-}
+            // Priority 1: Ambil data dari Cloud Database jika ada
+            if (masterDatabase && masterDatabase.pengurus && masterDatabase.pengurus.takmir) {
+                return masterDatabase.pengurus.takmir;
+            }
+            // Priority 2: Ambil dari LocalStorage browser
+            return localStorage.getItem('takmir_name') || "Hugeng Wahyudi, S.Kom";
+        }
+
+        function getBendaharaName() {
+            // Priority 1: Ambil data dari Cloud Database jika ada
+            if (masterDatabase && masterDatabase.pengurus && masterDatabase.pengurus.bendahara) {
+                return masterDatabase.pengurus.bendahara;
+            }
+            // Priority 2: Ambil dari LocalStorage browser
+            return localStorage.getItem('bendahara_name') || "Aditya Budi Santoso, M.Ag";
+        }
 
         function openSettingModal() { 
             document.getElementById('takmirNameInput').value = getTakmirName();
             document.getElementById('bendaharaNameInput').value = getBendaharaName();
             document.getElementById('settingModal').classList.remove('hidden'); 
         }
-        function closeSettingModal() { document.getElementById('settingModal').classList.add('hidden'); }
+
+        function closeSettingModal() { 
+            document.getElementById('settingModal').classList.add('hidden'); 
+        }
 
         function saveNewPin() {
-    const lama = document.getElementById('pinLama').value;
-    const baru = document.getElementById('pinBaru').value;
-    const takmir = document.getElementById('takmirNameInput').value;
-    const bendahara = document.getElementById('bendaharaNameInput').value;
+            const lama = document.getElementById('pinLama').value;
+            const baru = document.getElementById('pinBaru').value;
+            const takmir = document.getElementById('takmirNameInput').value.trim();
+            const bendahara = document.getElementById('bendaharaNameInput').value.trim();
 
-    if (lama && lama !== getStoredPin()) {
-        alert("PIN Lama tidak sesuai!");
-        return;
-    }
-    if (baru && baru.length < 4) {
-        alert("PIN Baru minimal 4 karakter!");
-        return;
-    }
-    if (baru) localStorage.setItem('admin_pin_key', baru);
+            if (lama && lama !== getStoredPin()) {
+                alert("PIN Lama tidak sesuai!");
+                return;
+            }
+            if (baru && baru.length < 4) {
+                alert("PIN Baru minimal 4 karakter!");
+                return;
+            }
+            if (baru) localStorage.setItem('admin_pin_key', baru);
 
-    // Simpan ke database cloud
-    if (!masterDatabase.config) masterDatabase.config = {};
-    if (takmir) masterDatabase.config.takmirName = takmir;
-    if (bendahara) masterDatabase.config.bendaharaName = bendahara;
+            // Simpan ke Objek Pengurus di Master Database agar ikut tersimpan ke Cloud
+            if (!masterDatabase.pengurus) masterDatabase.pengurus = {};
+            if (takmir) {
+                masterDatabase.pengurus.takmir = takmir;
+                localStorage.setItem('takmir_name', takmir);
+            }
+            if (bendahara) {
+                masterDatabase.pengurus.bendahara = bendahara;
+                localStorage.setItem('bendahara_name', bendahara);
+            }
 
-    if (takmir) localStorage.setItem('takmir_name', takmir);
-    if (bendahara) localStorage.setItem('bendahara_name', bendahara);
+            // Kirim database yang sudah berisi data pengurus ke Cloud
+            syncToCloud(masterDatabase);
 
-    syncToCloud(masterDatabase); // Kirim ke Cloud
-
-    alert("Pengaturan PIN & Nama Pengurus Berhasil Diperbarui di Cloud!");
-    closeSettingModal();
-}
+            alert("Pengaturan PIN & Nama Pengurus Berhasil Disimpan ke Cloud!");
+            closeSettingModal();
+        }
 
         // --- LOGIKA KEUANGAN PEKAN JUMAT ---
         function changeJumatWeek(delta) {
